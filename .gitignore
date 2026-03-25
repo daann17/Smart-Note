@@ -1,0 +1,88 @@
+# ==============================================================================
+# SmartNote Project .gitignore
+# ==============================================================================
+
+# =========================
+# 1. OS & Environment
+# =========================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*~
+*.swp
+
+# =========================
+# 2. IDEs & Editors
+# =========================
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+*.iml
+*.ipr
+*.iws
+.eclipse/
+.settings/
+
+# =========================
+# 3. Backend (Spring Boot / Java / Maven)
+# =========================
+backend/target/
+*.class
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Spring Boot Logs & Temp
+*.log
+backend/logs/
+backend/temp/
+hs_err_pid*
+replay_pid*
+
+# =========================
+# 4. Frontend (Node.js / Vue 3 / Vite)
+# =========================
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/.output/
+frontend/coverage/
+
+# Node logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.npm/
+
+# Local Environment Variables (Do not commit secrets!)
+frontend/.env.local
+frontend/.env.*.local
+*.local
+backend/.env
+backend/.env.*
+!backend/.env.example
+backend/src/main/resources/application-local.yml
+backend/src/main/resources/application-*.local.yml
+
+# =========================
+# 5. Project Specific & Runtime Data
+# =========================
+# 忽略用户上传的本地文件目录
+backend/uploads/
+uploads/
+
+# 忽略本地数据库存储目录(如果有)
+database/data/
+
+# 忽略不相关的测试/废弃目录
+login-idea/
+login-idea（ignore this）/

@@ -1,0 +1,40 @@
+{
+  "name": "frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@ant-design/icons-vue": "^7.0.1",
+    "@codemirror/lang-markdown": "^6.5.0",
+    "@codemirror/state": "^6.6.0",
+    "@codemirror/view": "^6.40.0",
+    "@stomp/stompjs": "^7.3.0",
+    "@types/markdown-it": "^14.1.2",
+    "ant-design-vue": "^4.2.6",
+    "axios": "^1.13.5",
+    "codemirror": "^6.0.2",
+    "less": "^4.5.1",
+    "markdown-it": "^14.1.1",
+    "pinia": "^3.0.4",
+    "vditor": "^3.11.2",
+    "vue": "^3.5.25",
+    "vue-router": "^4.6.4",
+    "y-codemirror.next": "^0.3.5",
+    "y-protocols": "^1.0.7",
+    "yjs": "^13.6.30"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "@vitejs/plugin-vue": "^6.0.2",
+    "@vue/tsconfig": "^0.8.1",
+    "typescript": "~5.9.3",
+    "vite": "^7.3.1",
+    "vue-tsc": "^3.1.5"
+  },
+  "packageManager": "pnpm@10.17.0+sha512.fce8a3dd29a4ed2ec566fb53efbb04d8c44a0f05bc6f24a73046910fb9c3ce7afa35a0980500668fa3573345bd644644fa98338fa168235c80f4aa17aa17fbef"
+}
