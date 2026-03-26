@@ -10,7 +10,7 @@ import {
   TeamOutlined,
   UserOutlined,
 } from '@ant-design/icons-vue';
-import { message } from 'ant-design-vue';
+import { message, Modal } from 'ant-design-vue';
 import { computed, onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import api from '../api';
@@ -59,8 +59,26 @@ type AdminUserStorage = {
   totalBytes: number;
 };
 
+type AdminSearchMaintenanceLastRun = {
+  status: 'IDLE' | 'SUCCESS' | 'FAILED';
+  operation: string | null;
+  startedAt: string | null;
+  finishedAt: string | null;
+  message: string;
+};
+
+type AdminSearchMaintenance = {
+  searchStrategy: string;
+  searchableNotes: number;
+  searchableNotebooks: number;
+  searchableTags: number;
+  noteTagLinks: number;
+  lastRun: AdminSearchMaintenanceLastRun;
+};
+
 type UserStatusFilter = 'all' | 'active' | 'inactive';
 type UserRoleFilter = 'all' | 'USER' | 'ADMIN';
+type SearchMaintenanceOperation = 'analyze' | 'vacuum' | 'reindex';
 
 const router = useRouter();
 const currentUsername = localStorage.getItem('username') || '';
@@ -69,7 +87,9 @@ const overviewLoading = ref(true);
 const userLoading = ref(true);
 const storageOverviewLoading = ref(true);
 const storageUserLoading = ref(true);
+const searchMaintenanceLoading = ref(true);
 const refreshing = ref(false);
+const searchMaintenanceAction = ref<SearchMaintenanceOperation | null>(null);
 
 const users = ref<AdminUser[]>([]);
 const storageUsers = ref<AdminUserStorage[]>([]);
@@ -101,6 +121,21 @@ const storageOverview = ref<AdminStorageOverview>({
   totalUploadBytes: 0,
   totalEstimatedBytes: 0,
   uploadFileCount: 0,
+});
+
+const searchMaintenance = ref<AdminSearchMaintenance>({
+  searchStrategy: '标题、正文与标签名模糊匹配',
+  searchableNotes: 0,
+  searchableNotebooks: 0,
+  searchableTags: 0,
+  noteTagLinks: 0,
+  lastRun: {
+    status: 'IDLE',
+    operation: null,
+    startedAt: null,
+    finishedAt: null,
+    message: '尚未执行搜索维护操作',
+  },
 });
 
 const userColumns = [
@@ -193,6 +228,33 @@ const storageCards = computed(() => ([
   },
 ]));
 
+const searchMaintenanceCards = computed(() => ([
+  {
+    key: 'notes',
+    label: '可搜索笔记',
+    value: searchMaintenance.value.searchableNotes,
+    hint: '非回收站笔记总量',
+  },
+  {
+    key: 'notebooks',
+    label: '参与搜索的笔记本',
+    value: searchMaintenance.value.searchableNotebooks,
+    hint: '搜索作用域覆盖的笔记本数量',
+  },
+  {
+    key: 'tags',
+    label: '标签总量',
+    value: searchMaintenance.value.searchableTags,
+    hint: '用于标签联想与筛选',
+  },
+  {
+    key: 'links',
+    label: '笔记标签关联',
+    value: searchMaintenance.value.noteTagLinks,
+    hint: '搜索关联表中的有效映射数',
+  },
+]));
+
 const managedKnowledgeBytes = computed(
   () => storageOverview.value.totalKnowledgeBytes + storageOverview.value.totalHistoryBytes,
 );
@@ -223,6 +285,47 @@ const formatBytes = (value?: number) => {
 
   return `${size.toFixed(size >= 10 || unitIndex === 0 ? 1 : 2)} ${units[unitIndex]}`;
 };
+
+const formatSearchMaintenanceOperation = (value?: string | null) => {
+  switch ((value || '').toLowerCase()) {
+    case 'analyze':
+      return 'ANALYZE';
+    case 'vacuum':
+      return 'VACUUM ANALYZE';
+    case 'reindex':
+      return 'REINDEX';
+    default:
+      return '未执行';
+  }
+};
+
+const searchMaintenanceStatusText = computed(() => {
+  switch (searchMaintenance.value.lastRun.status) {
+    case 'SUCCESS':
+      return '最近执行成功';
+    case 'FAILED':
+      return '最近执行失败';
+    default:
+      return '尚未执行';
+  }
+});
+
+const searchMaintenanceStatusColor = computed(() => {
+  switch (searchMaintenance.value.lastRun.status) {
+    case 'SUCCESS':
+      return 'success';
+    case 'FAILED':
+      return 'error';
+    default:
+      return 'default';
+  }
+});
+
+const searchMaintenanceLastTimeText = computed(() => {
+  const finishedAt = searchMaintenance.value.lastRun.finishedAt;
+  const startedAt = searchMaintenance.value.lastRun.startedAt;
+  return formatDateTime(finishedAt || startedAt || undefined);
+});
 
 const getStorageShare = (bytes: number) => {
   if (managedKnowledgeBytes.value <= 0) return 0;
@@ -324,11 +427,27 @@ const loadStorageUsers = async (silent = false) => {
   }
 };
 
+const loadSearchMaintenance = async (silent = false) => {
+  if (!silent) searchMaintenanceLoading.value = true;
+
+  try {
+    const response = await api.get<AdminSearchMaintenance>('/admin/search/maintenance');
+    searchMaintenance.value = response.data;
+  } catch (error: any) {
+    if (!handleAdminAccessError(error)) {
+      message.error(error.response?.data?.message || '搜索维护信息加载失败');
+    }
+  } finally {
+    searchMaintenanceLoading.value = false;
+  }
+};
+
 const refreshAll = async () => {
   refreshing.value = true;
   await Promise.allSettled([
     loadOverview(true),
     loadStorageOverview(true),
+    loadSearchMaintenance(true),
     loadUsers(true),
     loadStorageUsers(true),
   ]);
@@ -399,6 +518,40 @@ const onUserRoleChange = (user: AdminUser, nextRole: AdminUser['role']) => {
   void handleChangeUserRole(user, nextRole);
 };
 
+const runSearchMaintenance = async (operation: SearchMaintenanceOperation) => {
+  searchMaintenanceAction.value = operation;
+
+  try {
+    const response = await api.post<AdminSearchMaintenance>(`/admin/search/maintenance/${operation}`);
+    searchMaintenance.value = response.data;
+    message.success(`${formatSearchMaintenanceOperation(operation)} 已执行完成`);
+  } catch (error: any) {
+    if (!handleAdminAccessError(error)) {
+      message.error(error.response?.data?.message || `${formatSearchMaintenanceOperation(operation)} 执行失败`);
+    }
+  } finally {
+    searchMaintenanceAction.value = null;
+  }
+};
+
+const handleSearchMaintenance = (operation: SearchMaintenanceOperation) => {
+  if (operation === 'analyze') {
+    void runSearchMaintenance(operation);
+    return;
+  }
+
+  const isReindex = operation === 'reindex';
+  Modal.confirm({
+    title: isReindex ? '执行 REINDEX 维护？' : '执行 VACUUM ANALYZE 维护？',
+    content: isReindex
+      ? '该操作会重建搜索相关表索引，开销更高，建议在低峰期执行。是否继续？'
+      : '该操作会清理并分析搜索相关表，适合作为定期维护操作。是否继续？',
+    okText: '继续执行',
+    cancelText: '取消',
+    onOk: () => runSearchMaintenance(operation),
+  });
+};
+
 onMounted(async () => {
   if (!isStoredAdmin()) {
     router.replace('/home');
@@ -408,6 +561,7 @@ onMounted(async () => {
   await Promise.allSettled([
     loadOverview(),
     loadStorageOverview(),
+    loadSearchMaintenance(),
     loadUsers(),
     loadStorageUsers(),
   ]);
@@ -455,6 +609,78 @@ onMounted(async () => {
           <small>{{ card.hint }}</small>
         </div>
       </a-card>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <h2>搜索维护</h2>
+          <p>围绕搜索相关表提供可视化维护入口，便于管理员在数据量增长后刷新统计、清理膨胀并重建索引。</p>
+        </div>
+        <a-tag :color="searchMaintenanceStatusColor">{{ searchMaintenanceStatusText }}</a-tag>
+      </div>
+
+      <div class="maintenance-card-grid">
+        <a-card
+          v-for="card in searchMaintenanceCards"
+          :key="card.key"
+          class="maintenance-card"
+          :loading="searchMaintenanceLoading"
+        >
+          <div class="maintenance-metric">
+            <span>{{ card.label }}</span>
+            <strong>{{ card.value }}</strong>
+            <small>{{ card.hint }}</small>
+          </div>
+        </a-card>
+      </div>
+
+      <div class="maintenance-status-box">
+        <div class="maintenance-status-row">
+          <span class="maintenance-status-label">当前搜索策略</span>
+          <strong>{{ searchMaintenance.searchStrategy }}</strong>
+        </div>
+        <div class="maintenance-status-row">
+          <span class="maintenance-status-label">最近执行</span>
+          <strong>{{ formatSearchMaintenanceOperation(searchMaintenance.lastRun.operation) }}</strong>
+        </div>
+        <div class="maintenance-status-row">
+          <span class="maintenance-status-label">最近时间</span>
+          <strong>{{ searchMaintenanceLastTimeText }}</strong>
+        </div>
+        <p class="maintenance-status-message">{{ searchMaintenance.lastRun.message }}</p>
+      </div>
+
+      <div class="maintenance-actions">
+        <a-button @click="loadSearchMaintenance()" :loading="searchMaintenanceLoading && !searchMaintenanceAction">
+          刷新状态
+        </a-button>
+        <a-button
+          type="primary"
+          ghost
+          :loading="searchMaintenanceAction === 'analyze'"
+          @click="handleSearchMaintenance('analyze')"
+        >
+          执行 ANALYZE
+        </a-button>
+        <a-button
+          :loading="searchMaintenanceAction === 'vacuum'"
+          @click="handleSearchMaintenance('vacuum')"
+        >
+          执行 VACUUM ANALYZE
+        </a-button>
+        <a-button
+          danger
+          :loading="searchMaintenanceAction === 'reindex'"
+          @click="handleSearchMaintenance('reindex')"
+        >
+          执行 REINDEX
+        </a-button>
+      </div>
+
+      <p class="maintenance-footnote">
+        `ANALYZE` 用于刷新查询统计信息，`VACUUM ANALYZE` 适合常规维护，`REINDEX` 开销最大，建议在业务低峰期执行。
+      </p>
     </section>
 
     <section class="panel">
@@ -810,6 +1036,94 @@ onMounted(async () => {
   margin-bottom: 18px;
 }
 
+.maintenance-card-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.maintenance-card {
+  border-radius: 20px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  box-shadow: 0 18px 38px rgba(15, 23, 42, 0.05);
+}
+
+.maintenance-card :deep(.ant-card-body) {
+  padding: 20px;
+}
+
+.maintenance-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.maintenance-metric span {
+  color: #475569;
+  font-size: 13px;
+}
+
+.maintenance-metric strong {
+  color: #0f172a;
+  font-size: 28px;
+  line-height: 1;
+}
+
+.maintenance-metric small {
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.maintenance-status-box {
+  padding: 16px 18px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(239, 246, 255, 0.9), rgba(248, 250, 252, 0.92));
+  border: 1px solid rgba(191, 219, 254, 0.8);
+}
+
+.maintenance-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.maintenance-status-row + .maintenance-status-row {
+  margin-top: 10px;
+}
+
+.maintenance-status-label {
+  color: #475569;
+  font-size: 13px;
+}
+
+.maintenance-status-row strong {
+  color: #0f172a;
+  font-size: 14px;
+}
+
+.maintenance-status-message {
+  margin: 12px 0 0;
+  color: #334155;
+  line-height: 1.7;
+}
+
+.maintenance-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.maintenance-footnote {
+  margin: 12px 0 0;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
 .storage-table {
   margin-top: 4px;
 }
@@ -892,7 +1206,8 @@ onMounted(async () => {
 
 @media (max-width: 1180px) {
   .summary-grid,
-  .storage-card-grid {
+  .storage-card-grid,
+  .maintenance-card-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -908,8 +1223,14 @@ onMounted(async () => {
   }
 
   .summary-grid,
-  .storage-card-grid {
+  .storage-card-grid,
+  .maintenance-card-grid {
     grid-template-columns: 1fr;
+  }
+
+  .maintenance-status-row {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .toolbar-search,

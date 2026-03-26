@@ -6,6 +6,7 @@ import { useNotebookStore } from '../stores/notebook';
 import { useTagStore } from '../stores/tag';
 import { PlusOutlined, SaveOutlined, TagOutlined, HistoryOutlined, RobotOutlined, MoreOutlined, CopyOutlined, DragOutlined, ArrowLeftOutlined, DeleteOutlined, ShareAltOutlined, DownloadOutlined, MessageOutlined } from '@ant-design/icons-vue';
 import MarkdownEditor from '../components/MarkdownEditor.vue';
+import AIAssistantDrawer from '../components/AIAssistantDrawer.vue';
 import { message, Modal } from 'ant-design-vue';
 
 const route = useRoute();
@@ -141,6 +142,7 @@ const editorKey = ref(0);
 // AI 鎽樿鐩稿叧鐘舵€?
 const isGeneratingSummary = ref(false);
 const suggestingTags = ref(false);
+const aiDrawerVisible = ref(false);
 
 const handleGenerateSummary = async () => {
   if (!noteStore.currentNote) return;
@@ -190,6 +192,10 @@ const handleSuggestTags = async () => {
   } finally {
     suggestingTags.value = false;
   }
+};
+
+const openAIAssistant = () => {
+  aiDrawerVisible.value = true;
 };
 
 const handleOpenHistory = async () => {
@@ -469,6 +475,10 @@ const handleExportWord = async () => {
             <template #icon><RobotOutlined /></template>
             智能摘要
           </a-button>
+          <a-button type="default" @click="openAIAssistant" style="margin-right: 8px;">
+            <template #icon><RobotOutlined /></template>
+            AI 问答
+          </a-button>
           <a-button type="default" @click="handleOpenHistory" style="margin-right: 8px;">
             <template #icon><HistoryOutlined /></template>
             历史
@@ -668,6 +678,12 @@ const handleExportWord = async () => {
         </div>
       </div>
     </a-modal>
+
+    <AIAssistantDrawer
+      v-model:visible="aiDrawerVisible"
+      :current-note-id="noteStore.currentNote?.id ?? null"
+      :current-note-title="noteStore.currentNote?.title ?? ''"
+    />
   </div>
 </template>
 

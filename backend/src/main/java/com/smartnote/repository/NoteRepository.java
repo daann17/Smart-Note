@@ -17,16 +17,20 @@ public interface NoteRepository extends JpaRepository<Note, Long>, JpaSpecificat
     List<Note> findByNotebookIdAndStatusNotOrderByUpdatedAtDesc(Long notebookId, String status);
 
     @Query(value = """
-        SELECT DISTINCT n.* FROM notes n
-        LEFT JOIN notebooks nb ON n.notebook_id = nb.id
-        LEFT JOIN note_tags nt ON n.id = nt.note_id
-        LEFT JOIN tags t ON nt.tag_id = t.id
+        SELECT n.* FROM notes n
+        JOIN notebooks nb ON n.notebook_id = nb.id
         WHERE nb.user_id = :userId
-        AND n.status != 'TRASH'
+        AND n.status <> 'TRASH'
         AND (
             LOWER(n.title) LIKE LOWER(CONCAT('%', :keyword, '%'))
             OR LOWER(n.content) LIKE LOWER(CONCAT('%', :keyword, '%'))
-            OR LOWER(t.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            OR EXISTS (
+                SELECT 1
+                FROM note_tags nt
+                JOIN tags t ON nt.tag_id = t.id
+                WHERE nt.note_id = n.id
+                AND LOWER(t.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            )
         )
         ORDER BY
             CASE WHEN LOWER(n.title) LIKE LOWER(CONCAT('%', :keyword, '%')) THEN 1 ELSE 2 END,

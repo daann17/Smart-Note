@@ -1,16 +1,19 @@
 package com.smartnote.controller;
 
 import com.smartnote.dto.AdminOverviewResponse;
+import com.smartnote.dto.AdminSearchMaintenanceResponse;
 import com.smartnote.dto.AdminStorageOverviewResponse;
 import com.smartnote.dto.AdminUserStorageResponse;
 import com.smartnote.dto.AdminUserSummaryResponse;
 import com.smartnote.dto.UpdateAdminUserRoleRequest;
 import com.smartnote.dto.UpdateAdminUserStatusRequest;
 import com.smartnote.service.AdminService;
+import com.smartnote.service.AdminSearchMaintenanceService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,9 +28,14 @@ import java.util.Map;
 public class AdminController {
 
     private final AdminService adminService;
+    private final AdminSearchMaintenanceService adminSearchMaintenanceService;
 
-    public AdminController(AdminService adminService) {
+    public AdminController(
+            AdminService adminService,
+            AdminSearchMaintenanceService adminSearchMaintenanceService
+    ) {
         this.adminService = adminService;
+        this.adminSearchMaintenanceService = adminSearchMaintenanceService;
     }
 
     @GetMapping("/overview")
@@ -38,6 +46,20 @@ public class AdminController {
     @GetMapping("/storage/overview")
     public ResponseEntity<AdminStorageOverviewResponse> getStorageOverview() {
         return ResponseEntity.ok(adminService.getStorageOverview());
+    }
+
+    @GetMapping("/search/maintenance")
+    public ResponseEntity<AdminSearchMaintenanceResponse> getSearchMaintenanceOverview() {
+        return ResponseEntity.ok(adminSearchMaintenanceService.getOverview());
+    }
+
+    @PostMapping("/search/maintenance/{operation}")
+    public ResponseEntity<?> runSearchMaintenance(@PathVariable String operation) {
+        try {
+            return ResponseEntity.ok(adminSearchMaintenanceService.runMaintenance(operation));
+        } catch (IllegalArgumentException exception) {
+            return ResponseEntity.badRequest().body(Map.of("message", exception.getMessage()));
+        }
     }
 
     @GetMapping("/users")

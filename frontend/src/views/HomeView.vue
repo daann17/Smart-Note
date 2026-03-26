@@ -9,6 +9,7 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   PlusOutlined,
+  RobotOutlined,
   SearchOutlined,
   SettingOutlined,
   ShareAltOutlined,
@@ -24,6 +25,7 @@ import type { Note, NoteSearchFilters } from '../stores/note';
 import { useTagStore } from '../stores/tag';
 import { clearSession, storeSession } from '../utils/session';
 import DashboardView from './DashboardView.vue';
+import AIAssistantDrawer from '../components/AIAssistantDrawer.vue';
 
 type UserProfile = {
   username: string;
@@ -95,6 +97,7 @@ const createForm = reactive({
 });
 
 const recentNotes = ref<Note[]>([]);
+const aiDrawerVisible = ref(false);
 
 const profileModalVisible = ref(false);
 const profileLoading = ref(false);
@@ -674,6 +677,11 @@ onUnmounted(() => {
         </div>
 
         <div class="header-right">
+          <a-button type="default" shape="round" @click="aiDrawerVisible = true">
+            <template #icon><RobotOutlined /></template>
+            AI 问答
+          </a-button>
+
           <a-button type="primary" shape="round" @click="showCreateModal">
             <template #icon><PlusOutlined /></template>
             新建笔记本
@@ -797,6 +805,8 @@ onUnmounted(() => {
         </a-form>
       </a-spin>
     </a-modal>
+
+    <AIAssistantDrawer v-model:visible="aiDrawerVisible" />
   </a-layout>
 </template>
 
