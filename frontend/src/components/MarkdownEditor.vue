@@ -15,6 +15,9 @@ import {
 } from '@codemirror/view';
 import { markdown } from '@codemirror/lang-markdown';
 import MarkdownIt from 'markdown-it';
+// @ts-expect-error — markdown-it-katex 无官方类型声明
+import MarkdownItKatex from 'markdown-it-katex';
+import 'katex/dist/katex.min.css';
 import * as Y from 'yjs';
 import type { Awareness } from 'y-protocols/awareness';
 import { yCollab } from 'y-codemirror.next';
@@ -85,6 +88,8 @@ const imageWidthPresets: ImagePreset[] = [
 const editorHostRef = ref<HTMLElement | null>(null);
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const workspaceRef = ref<HTMLElement | null>(null);
+// Mermaid 渲染目标容器：预览面板的根节点
+const previewPaneRef = ref<HTMLElement | null>(null);
 
 const editorView = shallowRef<EditorView | null>(null);
 const provider = shallowRef<StompYjsProvider | null>(null);
@@ -122,12 +127,116 @@ let removeSplitResizeListeners: (() => void) | null = null;
 let previousBodyCursor = '';
 let previousBodyUserSelect = '';
 let htmlEmitTimer: ReturnType<typeof setTimeout> | null = null;
+let mermaidApi: typeof import('mermaid').default | null = null;
+let mermaidReady: Promise<typeof import('mermaid').default> | null = null;
 
+// ──────────────────────────────────────────────────────────────────────────────
+// Markdown-it 实例：配置扩展插件
+// ──────────────────────────────────────────────────────────────────────────────
 const md = new MarkdownIt({
   breaks: true,
   linkify: true,
   html: false,
 });
+
+// KaTeX 数学公式：支持行内 $...$ 和块级 $$...$$ 语法
+md.use(MarkdownItKatex, { throwOnError: false });
+
+// Mermaid 流程图：自定义 fence 渲染器，将 ```mermaid 代码块转换为占位 div，
+// 由 renderMermaidBlocks() 在 DOM 更新后异步渲染为 SVG
+const defaultFenceRenderer = md.renderer.rules.fence?.bind(md.renderer) ?? (
+  (tokens: any[], idx: number, options: any, _env: any, self: any) => self.renderToken(tokens, idx, options)
+);
+
+md.renderer.rules.fence = (tokens, idx, options, env, self) => {
+  const token = tokens[idx];
+  const lang = (token?.info ?? '').trim();
+
+  if (lang === 'mermaid') {
+    // 将图表源码 base64 编码存入 data 属性，避免 HTML 转义问题
+    const encoded = btoa(unescape(encodeURIComponent(token?.content ?? '')));
+    return `<div class="mermaid-block" data-source="${encoded}"></div>`;
+  }
+
+  return defaultFenceRenderer(tokens, idx, options, env, self);
+};
+
+// 初始化 Mermaid（关闭自动扫描，由我们手动控制渲染时机）
+const escapeHtml = (value: string) => value
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#39;');
+
+const getMermaid = async () => {
+  if (mermaidApi) {
+    return mermaidApi;
+  }
+
+  if (!mermaidReady) {
+    mermaidReady = import('mermaid')
+      .then((module) => {
+        module.default.initialize({
+          startOnLoad: false,
+          theme: 'neutral',
+          securityLevel: 'strict',
+        });
+        mermaidApi = module.default;
+        return mermaidApi;
+      })
+      .catch((error) => {
+        mermaidReady = null;
+        throw error;
+      });
+  }
+
+  return mermaidReady;
+};
+
+// 渲染预览面板中所有待渲染的 Mermaid 占位块
+let mermaidIdCounter = 0;
+const renderMermaidBlocks = async (container: HTMLElement | null) => {
+  if (!container) return;
+
+  const blocks = container.querySelectorAll<HTMLElement>('.mermaid-block[data-source]');
+  if (blocks.length === 0) return;
+
+  let mermaidInstance: typeof import('mermaid').default;
+  try {
+    mermaidInstance = await getMermaid();
+  } catch (err) {
+    const errorText = escapeHtml(String(err));
+    blocks.forEach((block) => {
+      block.innerHTML = `<pre class="mermaid-error">${errorText}</pre>`;
+      delete block.dataset.source;
+    });
+    return;
+  }
+
+  await Promise.all(Array.from(blocks).map(async (block) => {
+    const encoded = block.dataset.source;
+    if (!encoded) return;
+
+    try {
+      const source = decodeURIComponent(escape(atob(encoded)));
+      const id = `mermaid-${++mermaidIdCounter}`;
+      const { svg } = await mermaidInstance.render(id, source);
+      block.innerHTML = svg;
+      // 标记已渲染，避免重复处理
+      delete block.dataset.source;
+    } catch (err) {
+      // 语法错误时显示友好提示而非崩溃
+      block.innerHTML = `<pre class="mermaid-error">${escapeHtml(String(err))}</pre>`;
+      delete block.dataset.source;
+    }
+  }));
+};
+
+const renderPreviewMermaid = async () => {
+  await nextTick();
+  await renderMermaidBlocks(previewPaneRef.value);
+};
 
 const defaultImageRenderer = md.renderer.rules.image
   ?? ((tokens, index, options, _env, self) => self.renderToken(tokens, index, options));
@@ -1683,6 +1792,12 @@ const buildEditor = () => {
   editorView.value.dom.addEventListener('paste', handlePaste);
 };
 
+// 每次预览 HTML 更新后，等待 DOM 刷新再渲染 Mermaid 图表
+watch(renderedHtml, async () => {
+  if (viewMode.value === 'edit') return; // 纯编辑模式不渲染预览
+  await renderPreviewMermaid();
+});
+
 watch(viewMode, async (mode) => {
   if (mode !== 'split') {
     stopSplitResize();
@@ -1690,6 +1805,10 @@ watch(viewMode, async (mode) => {
 
   await nextTick();
   syncSplitLayout();
+
+  if (mode !== 'edit') {
+    await renderMermaidBlocks(previewPaneRef.value);
+  }
 
   if (mode === 'preview') return;
   editorView.value?.requestMeasure();
@@ -1896,7 +2015,7 @@ onBeforeUnmount(() => {
         <span class="split-divider-handle"></span>
       </button>
 
-      <div v-show="viewMode !== 'edit'" class="preview-pane">
+      <div v-show="viewMode !== 'edit'" class="preview-pane" ref="previewPaneRef">
         <div class="preview-scroll">
           <div class="markdown-preview" v-html="renderedHtml"></div>
         </div>
@@ -2255,6 +2374,24 @@ onBeforeUnmount(() => {
   color: #94a3b8;
   text-align: center;
   padding: 3rem 0;
+}
+
+/* Mermaid 图表容器 */
+.markdown-preview :deep(.mermaid-block) {
+  margin: 1.5rem 0;
+  overflow-x: auto;
+  text-align: center;
+}
+
+/* Mermaid 语法错误提示 */
+.markdown-preview :deep(.mermaid-error) {
+  color: #dc2626;
+  background: rgba(220, 38, 38, 0.06);
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  font-size: 13px;
+  white-space: pre-wrap;
 }
 
 .status-badge {

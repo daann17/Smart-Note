@@ -269,6 +269,7 @@ public class NoteService {
                 .orElseThrow(() -> new RuntimeException("Target notebook not found"));
         
         note.setNotebook(targetNotebook);
+        note.setFolder(null);
         return noteRepository.save(note);
     }
 
@@ -288,6 +289,9 @@ public class NoteService {
         newNote.setContentHtml(originalNote.getContentHtml());
         newNote.setStatus(originalNote.getStatus());
         newNote.setSummary(originalNote.getSummary());
+        if (originalNote.getNotebook().getId().equals(targetNotebookId)) {
+            newNote.setFolder(originalNote.getFolder());
+        }
         
         // 复制标签
         if (originalNote.getTags() != null && !originalNote.getTags().isEmpty()) {

@@ -1,17 +1,34 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useRoute } from 'vue-router';
 import zhCN from 'ant-design-vue/es/locale/zh_CN';
 import AIAssistantDrawer from './components/AIAssistantDrawer.vue';
+import GlobalSearchModal from './components/GlobalSearchModal.vue';
 import { RobotOutlined } from '@ant-design/icons-vue';
 
 const route = useRoute();
 const aiDrawerVisible = ref(false);
+const searchModalOpen = ref(false);
 
-// 只有非登录页和公开分享页才显示 AI 助手按钮
+// 只有非登录页和公开分享页才显示 AI 助手按钮和搜索快捷键
 const showAIFab = computed(() => {
   return route.name !== 'login' && route.name !== 'share';
 });
+
+// ──────────────────────────────────────────────────────────────────────────────
+// 全局快捷键：Ctrl+K / ⌘+K 唤起全局搜索
+// ──────────────────────────────────────────────────────────────────────────────
+const handleGlobalKeydown = (e: KeyboardEvent) => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+    // 不在登录/分享页时才响应
+    if (route.name === 'login' || route.name === 'share') return;
+    e.preventDefault();
+    searchModalOpen.value = true;
+  }
+};
+
+onMounted(() => document.addEventListener('keydown', handleGlobalKeydown));
+onBeforeUnmount(() => document.removeEventListener('keydown', handleGlobalKeydown));
 </script>
 
 <template>
@@ -35,6 +52,9 @@ const showAIFab = computed(() => {
 
     <!-- AI 助手抽屉 -->
     <AIAssistantDrawer v-model:visible="aiDrawerVisible" />
+
+    <!-- 全局搜索弹窗（Ctrl+K / ⌘+K 唤起） -->
+    <GlobalSearchModal v-model:open="searchModalOpen" />
   </a-config-provider>
 </template>
 

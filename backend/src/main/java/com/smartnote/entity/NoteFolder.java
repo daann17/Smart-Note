@@ -11,15 +11,21 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
 
 /**
- * 笔记实体类 (Note)
+ * 笔记文件夹实体 (NoteFolder)
+ *
+ * 在 Notebook（知识库）内部提供一层目录分组，形成：
+ *   Notebook → NoteFolder → Note 的三层结构。
+ *
+ * 支持自引用嵌套（parentFolder），但当前 UI 只暴露单层。
+ * JPA 的 ddl-auto=update 会自动建表，无需手写 DDL。
  */
 @Entity
-@Table(name = "notes")
+@Table(name = "note_folders")
 @Data
 @NoArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-public class Note {
+public class NoteFolder {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -34,42 +40,24 @@ public class Note {
     private Notebook notebook;
 
     /**
-     * 所属文件夹（可为 null，表示笔记位于笔记本根目录）
+     * 父文件夹（为 null 表示顶层文件夹）
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "folder_id")
+    @JoinColumn(name = "parent_folder_id")
     @JsonIgnoreProperties({"notebook", "parentFolder", "hibernateLazyInitializer", "handler"})
-    private NoteFolder folder;
+    private NoteFolder parentFolder;
 
     /**
-     * 笔记标题
+     * 文件夹名称
      */
-    @Column(nullable = false, length = 200)
-    private String title;
+    @Column(nullable = false, length = 100)
+    private String name;
 
     /**
-     * Markdown 内容
+     * 排序权重（数字越小排越靠前）
      */
-    @Column(columnDefinition = "TEXT")
-    private String content;
-
-    /**
-     * 渲染后的 HTML 内容 (用于展示和搜索)
-     */
-    @Column(name = "content_html", columnDefinition = "TEXT")
-    private String contentHtml;
-
-    /**
-     * 摘要 (AI 生成)
-     */
-    @Column(columnDefinition = "TEXT")
-    private String summary;
-
-    /**
-     * 状态 (DRAFT, PUBLISHED, TRASH)
-     */
-    @Column(length = 20)
-    private String status = "DRAFT";
+    @Column(name = "sort_order", nullable = false)
+    private int sortOrder = 0;
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -78,13 +66,4 @@ public class Note {
     @LastModifiedDate
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
-
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-        name = "note_tags",
-        joinColumns = @JoinColumn(name = "note_id"),
-        inverseJoinColumns = @JoinColumn(name = "tag_id")
-    )
-    @JsonIgnoreProperties({"user"})
-    private java.util.Set<Tag> tags = new java.util.HashSet<>();
 }

@@ -1,10 +1,17 @@
 ﻿<script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useNoteStore } from '../stores/note';
 import { useNotebookStore } from '../stores/notebook';
 import { useTagStore } from '../stores/tag';
-import { PlusOutlined, SaveOutlined, TagOutlined, HistoryOutlined, RobotOutlined, MoreOutlined, CopyOutlined, DragOutlined, ArrowLeftOutlined, DeleteOutlined, ShareAltOutlined, DownloadOutlined, MessageOutlined } from '@ant-design/icons-vue';
+import { useFolderStore } from '../stores/folder';
+import {
+  PlusOutlined, SaveOutlined, TagOutlined, HistoryOutlined,
+  RobotOutlined, MoreOutlined, CopyOutlined, DragOutlined,
+  ArrowLeftOutlined, DeleteOutlined, ShareAltOutlined,
+  DownloadOutlined, MessageOutlined, FolderOutlined,
+  FolderOpenOutlined, EditOutlined, FolderAddOutlined,
+} from '@ant-design/icons-vue';
 import MarkdownEditor from '../components/MarkdownEditor.vue';
 import AIAssistantDrawer from '../components/AIAssistantDrawer.vue';
 import { message, Modal } from 'ant-design-vue';
@@ -14,38 +21,73 @@ const router = useRouter();
 const noteStore = useNoteStore();
 const notebookStore = useNotebookStore();
 const tagStore = useTagStore();
+const folderStore = useFolderStore();
 
-const notebookId = ref(Number(route.params.notebookId));
+const notebookId = ref<number | null>(null);
 const selectedNoteId = ref<number | null>(null);
 const selectedTags = ref<string[]>([]);
 const currentUsername = localStorage.getItem('displayName') || localStorage.getItem('username') || 'Author';
 
-// 鑷姩淇濆瓨涓庣姸鎬佹爣蹇?
+// 自动保存与状态标识
 let autoSaveTimer: any = null;
 const lastSavedTime = ref<string>('');
 const isSwitchingNote = ref<boolean>(false);
 
-onMounted(async () => {
-  document.addEventListener('keydown', handleKeyDown);
-  
-  if (notebookId.value) {
-    await noteStore.fetchNotes(notebookId.value);
-    
-    // 濡傛灉 URL 鍙傛暟涓湁 noteId锛屽垯浼樺厛閫変腑璇ョ瑪璁?
-    const noteIdFromQuery = Number(route.query.noteId);
-    if (noteIdFromQuery) {
-        handleSelectNote(noteIdFromQuery);
-    } else if (noteStore.notes.length > 0 && noteStore.notes[0]) {
-      handleSelectNote(noteStore.notes[0].id);
-    }
+const normalizeRouteId = (value: unknown) => {
+  const rawValue = Array.isArray(value) ? value[0] : value;
+  const id = Number(rawValue);
+  return Number.isInteger(id) && id > 0 ? id : null;
+};
+
+const finishSwitchingNote = () => {
+  window.setTimeout(() => {
+    isSwitchingNote.value = false;
+  }, 100);
+};
+
+const resetCurrentNoteState = () => {
+  selectedNoteId.value = null;
+  selectedTags.value = [];
+  lastSavedTime.value = '';
+  noteStore.currentNote = null;
+};
+
+const loadNotebookContext = async (targetNotebookId: number, preferredNoteId: number | null) => {
+  notebookId.value = targetNotebookId;
+  isSwitchingNote.value = true;
+
+  if (autoSaveTimer) clearTimeout(autoSaveTimer);
+
+  folderStore.clearFolders();
+  resetCurrentNoteState();
+
+  await Promise.all([
+    noteStore.fetchNotes(targetNotebookId),
+    folderStore.fetchFolders(targetNotebookId),
+  ]);
+
+  const selectedFromRoute = preferredNoteId != null && noteStore.notes.some((note) => note.id === preferredNoteId)
+    ? preferredNoteId
+    : null;
+  const nextSelectedNoteId = selectedFromRoute ?? noteStore.notes[0]?.id ?? null;
+
+  if (nextSelectedNoteId != null) {
+    await handleSelectNote(nextSelectedNoteId);
+    return;
   }
-  // 寮傛鍔犺浇鍏朵粬鏁版嵁锛屼笉闃诲涓绘祦绋?
+
+  finishSwitchingNote();
+};
+
+onMounted(() => {
+  document.addEventListener('keydown', handleKeyDown);
   notebookStore.fetchNotebooks();
   tagStore.fetchTags();
 });
 
 onUnmounted(() => {
   document.removeEventListener('keydown', handleKeyDown);
+  if (autoSaveTimer) clearTimeout(autoSaveTimer);
 });
 
 const handleSelectNote = async (id: number) => {
@@ -56,18 +98,33 @@ const handleSelectNote = async (id: number) => {
   selectedNoteId.value = id;
   
   await noteStore.getNoteDetail(id);
-  // 鍒濆鍖栭€変腑鐨勬爣绛?
+  // 初始化选中的标签
   if (noteStore.currentNote && noteStore.currentNote.tags) {
     selectedTags.value = noteStore.currentNote.tags.map(t => t.name);
   } else {
     selectedTags.value = [];
   }
+
+  if (
+    notebookId.value != null
+    && (
+      normalizeRouteId(route.params.notebookId) !== notebookId.value
+      || normalizeRouteId(route.query.noteId) !== id
+    )
+  ) {
+    void router.replace({
+      name: 'notebook',
+      params: { notebookId: notebookId.value },
+      query: { noteId: id },
+    });
+  }
   
-  // 寤惰繜瑙ｉ櫎鍒囨崲鐘舵€侊紝閬垮厤瑙﹀彂鑷姩淇濆瓨
-  setTimeout(() => { isSwitchingNote.value = false; }, 100);
+  // 延迟解除切换状态，避免触发自动保存
+  finishSwitchingNote();
 };
 
 const handleCreateNote = async () => {
+  if (!notebookId.value) return;
   isSwitchingNote.value = true;
   if (autoSaveTimer) clearTimeout(autoSaveTimer);
   lastSavedTime.value = '';
@@ -76,36 +133,53 @@ const handleCreateNote = async () => {
   if (newNote) {
     selectedNoteId.value = newNote.id;
     selectedTags.value = [];
-    message.success('鏂扮瑪璁板凡鍒涘缓');
+    message.success('新笔记已创建');
   }
   
-  // 寤惰繜瑙ｉ櫎鍒囨崲鐘舵€?
-  setTimeout(() => { isSwitchingNote.value = false; }, 100);
+  // 延迟解除切换状态，避免触发自动保存
+  finishSwitchingNote();
 };
+
+watch(
+  () => [normalizeRouteId(route.params.notebookId), normalizeRouteId(route.query.noteId)] as const,
+  async ([nextNotebookId, nextNoteId]) => {
+    if (nextNotebookId == null) return;
+
+    if (notebookId.value !== nextNotebookId) {
+      await loadNotebookContext(nextNotebookId, nextNoteId);
+      return;
+    }
+
+    if (nextNoteId != null && nextNoteId !== selectedNoteId.value && noteStore.notes.some((note) => note.id === nextNoteId)) {
+      await handleSelectNote(nextNoteId);
+    }
+  },
+  { immediate: true }
+);
 
 const handleSave = async (isAutoSave = false) => {
   if (noteStore.currentNote) {
     await noteStore.updateNote(noteStore.currentNote.id, {
       title: noteStore.currentNote.title,
       content: noteStore.currentNote.content,
-      contentHtml: noteStore.currentNote.contentHtml, // 纭繚鍙戦€?HTML
-      tags: selectedTags.value, // 鍙戦€佹爣绛惧悕绉板垪琛?
-      forceHistory: !isAutoSave // 濡傛灉鏄墜鍔ㄤ繚瀛橈紝寮哄埗鐢熸垚鍘嗗彶鐗堟湰
+      contentHtml: noteStore.currentNote.contentHtml, // 确保发送 HTML
+      tags: selectedTags.value, // 发送标签名称列表
+      forceHistory: !isAutoSave // 如果是手动保存，强制生成历史版本
     });
-    // 閲嶆柊鑾峰彇鏍囩鍒楄〃锛屽洜涓哄彲鑳芥湁鏂板垱寤虹殑鏍囩
+    // 重新获取标签列表，因为可能有新创建的标签
     await tagStore.fetchTags();
     
-    // 鏇存柊淇濆瓨鏃堕棿
+    // 更新保存时间
     const now = new Date();
     lastSavedTime.value = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
     
     if (!isAutoSave) {
-      message.success('淇濆瓨鎴愬姛');
+      message.success('保存成功');
     }
   }
 };
 
-// 鐩戝惉鍐呭鍙樺寲鑷姩淇濆瓨 (绠€鍗曠殑闃叉姈)
+// 监听内容变化自动保存（简单防抖）
 watch(
   () => noteStore.currentNote?.content,
   () => {
@@ -114,32 +188,32 @@ watch(
     if (autoSaveTimer) clearTimeout(autoSaveTimer);
     autoSaveTimer = setTimeout(() => {
       handleSave(true);
-    }, 3000); // 3绉掕嚜鍔ㄤ繚瀛?
+    }, 3000); // 3 秒自动保存
   }
 );
 
-// 蹇嵎閿繚瀛?
+// 快捷键保存
 const handleKeyDown = (e: KeyboardEvent) => {
   if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-    e.preventDefault(); // 闃绘娴忚鍣ㄩ粯璁ょ殑淇濆瓨缃戦〉琛屼负
+    e.preventDefault(); // 阻止浏览器默认的保存网页行为
     
-    // 濡傛灉鏄€氳繃蹇嵎閿Е鍙戠殑锛屼篃瑙嗕负鎵嬪姩淇濆瓨锛屽簲褰撳己鍒剁敓鎴愬巻鍙茶褰?
-    // 浣嗘槸鐩存帴璋冪敤 handleSave(false) 浼氬洜涓烘病鏈夌偣鍑绘寜閽紝鐒︾偣杩樺湪缂栬緫鍣ㄥ唴閮?
-    // Vditor 鍙兘娌℃湁瑙﹀彂 blur 鏇存柊 contentHtml銆?
-    // 涓轰簡淇濋櫓锛岃櫧鐒跺綋鍓嶅唴瀹瑰凡缁忛€氳繃 v-model 鏇存柊锛屼絾鎴戜滑渚濈劧瑙﹀彂鎵嬪姩淇濆瓨鏍囪瘑
+    // 如果是通过快捷键触发的，也视为手动保存，应当强制生成历史记录
+    // 但是直接调用 handleSave(false) 会因为没有点击按钮，焦点还在编辑器内部
+    // 编辑器可能还没有通过 blur 更新 contentHtml。
+    // 为了保险，虽然当前内容已经通过 v-model 更新，但我们依然触发手动保存
     handleSave(false);
   }
 };
 
-// 鍘嗗彶鐗堟湰鐩稿叧鏂规硶
+// 历史版本相关方法
 const historyDrawerVisible = ref(false);
 const previewModalVisible = ref(false);
 const previewHistory = ref<any>(null);
 
-// 寮曞叆涓€涓鏁板櫒鏉ュ己鍒跺埛鏂?Vditor 缂栬緫鍣ㄧ粍浠?
+// 引入一个计数器来强制刷新 MarkdownEditor 组件
 const editorKey = ref(0);
 
-// AI 鎽樿鐩稿叧鐘舵€?
+// AI 摘要相关状态
 const isGeneratingSummary = ref(false);
 const suggestingTags = ref(false);
 const aiDrawerVisible = ref(false);
@@ -154,12 +228,12 @@ const handleGenerateSummary = async () => {
 
   isGeneratingSummary.value = true;
   try {
-    // 寮哄埗鍏堜繚瀛樹竴涓嬪綋鍓嶅唴瀹癸紝纭繚 AI 鎷垮埌鐨勬槸鏈€鏂板唴瀹?
+    // 强制先保存一下当前内容，确保 AI 拿到的是最新内容
     await handleSave(true);
     await noteStore.generateSummary(noteStore.currentNote.id);
     message.success('智能摘要生成成功');
   } catch (error: any) {
-    message.error(error.response?.data?.message || '鎽樿鐢熸垚澶辫触锛岃妫€鏌ョ綉缁滄垨閰嶇疆');
+    message.error(error.response?.data?.message || '摘要生成失败，请检查网络或配置');
   } finally {
     isGeneratingSummary.value = false;
   }
@@ -178,17 +252,17 @@ const handleSuggestTags = async () => {
     await handleSave(true);
     const tags = await noteStore.suggestTags(noteStore.currentNote.id);
     if (tags && tags.length > 0) {
-      // 鍚堝苟鐜版湁鏍囩鍜屾帹鑽愭爣绛撅紝鍘婚噸
+      // 合并现有标签和推荐标签，去重
       const newTags = Array.from(new Set([...selectedTags.value, ...tags]));
       selectedTags.value = newTags;
-      // 瑙﹀彂淇濆瓨
+      // 触发保存
       await handleSave(true);
-      message.success(`鎴愬姛鎺ㄨ崘骞舵坊鍔犱簡 ${tags.length} 涓爣绛撅紒`);
+      message.success(`成功推荐并添加了 ${tags.length} 个标签！`);
     } else {
-      message.info('AI 鏈兘鎻愬彇鍑哄悎閫傜殑鏍囩');
+      message.info('AI 未能提取出合适的标签');
     }
   } catch (error: any) {
-    message.error(error.response?.data?.message || '鏍囩鎺ㄨ崘澶辫触');
+    message.error(error.response?.data?.message || '标签推荐失败');
   } finally {
     suggestingTags.value = false;
   }
@@ -213,23 +287,23 @@ const handleRollbackHistory = () => {
   if (!noteStore.currentNote || !previewHistory.value) return;
   
   Modal.confirm({
-    title: '纭鍥炴粴',
+    title: '确认回滚',
     content: '回滚后当前内容将被覆盖，同时会生成一条新的历史记录，是否继续？',
     onOk: async () => {
       const res = await noteStore.rollbackToHistory(noteStore.currentNote!.id, previewHistory.value.id);
       if (res) {
-        message.success('鍥炴粴鎴愬姛');
+        message.success('回滚成功');
         previewModalVisible.value = false;
         historyDrawerVisible.value = false;
         
-        // 寮哄埗閲嶆柊娓叉煋 MarkdownEditor 缁勪欢锛岃鍥炴粴鍚庣殑鍐呭绔嬪埢鏄剧ず
+        // 强制重新渲染 MarkdownEditor 组件，让回滚后的内容立刻显示
         editorKey.value += 1;
       }
     }
   });
 };
 
-// 绉诲姩涓庡鍒剁瑪璁扮浉鍏崇姸鎬?
+// 移动与复制笔记相关状态
 const moveCopyModalVisible = ref(false);
 const moveCopyActionType = ref<'move' | 'copy'>('move');
 const targetNotebookId = ref<number | null>(null);
@@ -251,18 +325,19 @@ const submitMoveCopy = async () => {
   try {
     if (moveCopyActionType.value === 'move') {
       await noteStore.moveNote(noteStore.currentNote.id, targetNotebookId.value);
-      message.success('绗旇绉诲姩鎴愬姛');
-      // If no notes left or current is gone, select first
-      if (!noteStore.currentNote && noteStore.notes.length > 0 && noteStore.notes[0]) {
-          handleSelectNote(noteStore.notes[0].id);
+      message.success('笔记移动成功');
+      if (noteStore.notes.length > 0 && noteStore.notes[0]) {
+        await handleSelectNote(noteStore.notes[0].id);
+      } else {
+        resetCurrentNoteState();
       }
     } else {
       await noteStore.copyNote(noteStore.currentNote.id, targetNotebookId.value);
-      message.success('绗旇澶嶅埗鎴愬姛');
+      message.success('笔记复制成功');
     }
     moveCopyModalVisible.value = false;
   } catch (error: any) {
-    message.error(error.response?.data?.message || '鎿嶄綔澶辫触');
+    message.error(error.response?.data?.message || '操作失败');
   }
 };
 
@@ -270,25 +345,25 @@ const handleDeleteNote = () => {
   if (!noteStore.currentNote) return;
   Modal.confirm({
     title: '移至回收站',
-    content: '绗旇灏嗙Щ鑷冲洖鏀剁珯锛屽彲浠ュ湪鍥炴敹绔欎腑鎭㈠鎴栧交搴曞垹闄わ紝纭鍒犻櫎鍚楋紵',
+    content: '笔记将移至回收站，可以在回收站中恢复或彻底删除，确认删除吗？',
     okText: '移至回收站',
     okType: 'danger',
-    cancelText: '鍙栨秷',
+    cancelText: '取消',
     onOk: async () => {
       try {
         await noteStore.deleteNote(noteStore.currentNote!.id);
-        message.success('绗旇宸茬Щ鑷冲洖鏀剁珯');
+        message.success('笔记已移至回收站');
         // Auto select another note if available
         if (noteStore.notes.length > 0 && noteStore.notes[0]) {
           handleSelectNote(noteStore.notes[0].id);
         }
       } catch (error: any) {
-        message.error('鍒犻櫎澶辫触');
+        message.error('删除失败');
       }
     }
   });
 };
-// 鍒嗕韩绗旇鐩稿叧鐘舵€?
+// 分享笔记相关状态
 const shareModalVisible = ref(false);
 const shareInfo = ref<any>(null);
 const shareExpireDays = ref<number | undefined>(undefined);
@@ -324,9 +399,9 @@ const handleCreateShare = async () => {
       shareAllowEdit.value
     );
     shareInfo.value = res;
-    message.success('鍒嗕韩閾炬帴鐢熸垚鎴愬姛');
+    message.success('分享链接生成成功');
   } catch (error: any) {
-    message.error('鐢熸垚澶辫触');
+    message.error('生成失败');
   }
 };
 
@@ -337,7 +412,7 @@ const handleDisableShare = async () => {
     shareInfo.value = null;
     message.success('分享已关闭');
   } catch (error: any) {
-    message.error('鍏抽棴澶辫触');
+    message.error('关闭失败');
   }
 };
 
@@ -365,17 +440,17 @@ const openCommentArea = () => {
 const handleExportMarkdown = async () => {
   if (!noteStore.currentNote) return;
   
-  // 鎻愮ず鐢ㄦ埛姝ｅ湪瀵煎嚭
-  const hide = message.loading('姝ｅ湪瀵煎嚭...', 0);
+  // 提示用户正在导出
+  const hide = message.loading('正在导出...', 0);
   try {
     const success = await noteStore.exportNoteToMarkdown(
       noteStore.currentNote.id, 
       noteStore.currentNote.title || '未命名笔记'
     );
     if (success) {
-      message.success('瀵煎嚭鎴愬姛');
+      message.success('导出成功');
     } else {
-      message.error('瀵煎嚭澶辫触锛岃閲嶈瘯');
+      message.error('导出失败，请重试');
     }
   } finally {
     hide();
@@ -384,16 +459,16 @@ const handleExportMarkdown = async () => {
 const handleExportPdf = async () => {
   if (!noteStore.currentNote) return;
 
-  const hide = message.loading('姝ｅ湪瀵煎嚭...', 0);
+  const hide = message.loading('正在导出...', 0);
   try {
     const success = await noteStore.exportNoteToPdf(
       noteStore.currentNote.id,
       noteStore.currentNote.title || '未命名笔记'
     );
     if (success) {
-      message.success('PDF 瀵煎嚭鎴愬姛');
+      message.success('PDF 导出成功');
     } else {
-      message.error('PDF 瀵煎嚭澶辫触锛岃閲嶈瘯');
+      message.error('PDF 导出失败，请重试');
     }
   } finally {
     hide();
@@ -403,19 +478,154 @@ const handleExportPdf = async () => {
 const handleExportWord = async () => {
   if (!noteStore.currentNote) return;
 
-  const hide = message.loading('姝ｅ湪瀵煎嚭...', 0);
+  const hide = message.loading('正在导出...', 0);
   try {
     const success = await noteStore.exportNoteToWord(
       noteStore.currentNote.id,
       noteStore.currentNote.title || '未命名笔记'
     );
     if (success) {
-      message.success('Word 瀵煎嚭鎴愬姛');
+      message.success('Word 导出成功');
     } else {
-      message.error('Word 瀵煎嚭澶辫触锛岃閲嶈瘯');
+      message.error('Word 导出失败，请重试');
     }
   } finally {
     hide();
+  }
+};
+
+
+// ──────────────────────────────────────────────────────────────────────────────
+// 文件夹管理：状态与操作
+// ──────────────────────────────────────────────────────────────────────────────
+
+// 将笔记列表按文件夹分组
+// 返回：{ root: Note[], folders: { folder, notes }[] }
+const groupedNotes = computed(() => {
+  const rootNotes = noteStore.notes.filter((n) => !n.folder && !n.folderId);
+  const folderGroups = folderStore.folders.map((folder) => ({
+    folder,
+    notes: noteStore.notes.filter((n) => n.folder?.id === folder.id || n.folderId === folder.id),
+  }));
+  return { rootNotes, folderGroups };
+});
+
+// 文件夹管理：展开/折叠、分组、新建、重命名、删除、拖拽
+// ──────────────────────────────────────────────────────────────────────────────
+
+// 折叠状态：存储已折叠的文件夹 ID 列表（用数组保证 Vue 响应式）
+const collapsedFolderIds = ref<number[]>([]);
+const isCollapsed = (folderId: number) => collapsedFolderIds.value.includes(folderId);
+const toggleFolder = (folderId: number) => {
+  const idx = collapsedFolderIds.value.indexOf(folderId);
+  if (idx >= 0) {
+    collapsedFolderIds.value.splice(idx, 1); // 展开
+  } else {
+    collapsedFolderIds.value.push(folderId); // 折叠
+  }
+};
+
+// 新建文件夹
+const newFolderModalVisible = ref(false);
+const newFolderName = ref('');
+const handleOpenNewFolderModal = () => {
+  newFolderName.value = '';
+  newFolderModalVisible.value = true;
+};
+const handleCreateFolder = async () => {
+  if (!notebookId.value) return;
+  if (!newFolderName.value.trim()) {
+    message.warning('文件夹名称不能为空');
+    return;
+  }
+  try {
+    await folderStore.createFolder(notebookId.value, newFolderName.value.trim());
+    newFolderModalVisible.value = false;
+    message.success('文件夹创建成功');
+  } catch (error: any) {
+    message.error(error.response?.data?.message || '创建文件夹失败');
+  }
+};
+
+// 重命名文件夹（行内编辑）
+const renamingFolder = ref<{ id: number; name: string } | null>(null);
+const handleStartRename = (folder: { id: number; name: string }) => {
+  renamingFolder.value = { ...folder };
+};
+const handleConfirmRename = async () => {
+  if (!renamingFolder.value) return;
+  if (!renamingFolder.value.name.trim()) {
+    message.warning('文件夹名称不能为空');
+    return;
+  }
+  try {
+    await folderStore.renameFolder(renamingFolder.value.id, renamingFolder.value.name.trim());
+    renamingFolder.value = null;
+    message.success('重命名成功');
+  } catch (error: any) {
+    message.error(error.response?.data?.message || '重命名失败');
+  }
+};
+
+// 删除文件夹（笔记移至根目录）
+const handleDeleteFolder = (folderId: number, folderName: string) => {
+  Modal.confirm({
+    title: '删除文件夹',
+    content: `确认删除「${folderName}」？文件夹内的笔记将移至根目录，不会丢失。`,
+    okText: '删除',
+    okType: 'danger',
+    cancelText: '取消',
+    onOk: async () => {
+      try {
+        await folderStore.deleteFolder(folderId);
+        noteStore.notes.forEach((n) => {
+          if (n.folder?.id === folderId || n.folderId === folderId) {
+            n.folder = null;
+            n.folderId = null;
+          }
+        });
+        if (noteStore.currentNote?.folder?.id === folderId || noteStore.currentNote?.folderId === folderId) {
+          noteStore.currentNote.folder = null;
+          noteStore.currentNote.folderId = null;
+        }
+        message.success('文件夹已删除，笔记已移至根目录');
+      } catch (error: any) {
+        message.error(error.response?.data?.message || '删除文件夹失败');
+        throw error;
+      }
+    },
+  });
+};
+
+// 拖拽笔记到文件夹：HTML5 拖拽 API
+const draggingNoteId = ref<number | null>(null);
+
+const handleNoteDragStart = (noteId: number) => {
+  draggingNoteId.value = noteId;
+};
+
+const handleDropOnFolder = async (folderId: number | null) => {
+  const noteId = draggingNoteId.value;
+  draggingNoteId.value = null;
+  if (noteId == null) return;
+
+  try {
+    await folderStore.moveNoteToFolder(noteId, folderId);
+    const folder = folderId == null ? null : folderStore.folders.find((f) => f.id === folderId) ?? null;
+    const nextFolder = folder ? { id: folder.id, name: folder.name } : null;
+    const note = noteStore.notes.find((n) => n.id === noteId);
+
+    if (note) {
+      note.folder = nextFolder;
+      note.folderId = folderId;
+    }
+
+    if (noteStore.currentNote?.id === noteId) {
+      noteStore.currentNote.folder = nextFolder;
+      noteStore.currentNote.folderId = folderId;
+    }
+  } catch (error: any) {
+    message.error(error.response?.data?.message || '移动笔记失败');
   }
 };
 
@@ -424,6 +634,7 @@ const handleExportWord = async () => {
 <template>
   <div class="note-editor-layout">
     <div class="note-list">
+      <!-- 侧边栏头部：返回按钮 + 标题 + 新建按钮 -->
       <div class="list-header">
         <div style="display: flex; align-items: center; gap: 8px;">
           <a-button type="text" shape="circle" @click="router.push('/home')">
@@ -431,27 +642,125 @@ const handleExportWord = async () => {
           </a-button>
           <h3 style="margin: 0;">笔记列表</h3>
         </div>
-        <a-button type="primary" shape="circle" size="small" @click="handleCreateNote">
-          <template #icon><PlusOutlined /></template>
-        </a-button>
+        <div style="display: flex; gap: 6px;">
+          <!-- 新建文件夹 -->
+          <a-tooltip title="新建文件夹">
+            <a-button type="text" shape="circle" size="small" @click="handleOpenNewFolderModal">
+              <template #icon><FolderAddOutlined /></template>
+            </a-button>
+          </a-tooltip>
+          <!-- 新建笔记 -->
+          <a-button type="primary" shape="circle" size="small" @click="handleCreateNote">
+            <template #icon><PlusOutlined /></template>
+          </a-button>
+        </div>
       </div>
-      <div class="list-content" style="flex: 1; overflow-y: auto;">
-        <a-list item-layout="horizontal" :data-source="noteStore.notes">
-          <template #renderItem="{ item }">
-            <a-list-item
+
+      <!-- 笔记列表：按文件夹分组 -->
+      <div
+        class="list-content"
+        @dragover.prevent
+        @drop="handleDropOnFolder(null)"
+      >
+        <!-- 根目录笔记（无文件夹） -->
+        <template v-if="groupedNotes.rootNotes.length > 0 || folderStore.folders.length === 0">
+          <div
+            v-for="item in groupedNotes.rootNotes"
+            :key="item.id"
+            class="note-item"
+            :class="{ active: item.id === selectedNoteId }"
+            draggable="true"
+            @click="handleSelectNote(item.id)"
+            @dragstart="handleNoteDragStart(item.id)"
+          >
+            <span class="note-title">{{ item.title || '未命名笔记' }}</span>
+            <span class="note-date">{{ new Date(item.updatedAt).toLocaleDateString() }}</span>
+          </div>
+        </template>
+
+        <!-- 各文件夹分组 -->
+        <div
+          v-for="{ folder, notes } in groupedNotes.folderGroups"
+          :key="folder.id"
+          class="folder-group"
+          @dragover.prevent
+          @drop.stop="handleDropOnFolder(folder.id)"
+        >
+          <!-- 文件夹标题行 -->
+          <div class="folder-header" @click="toggleFolder(folder.id)">
+            <!-- 展开/折叠图标 -->
+            <component
+              :is="isCollapsed(folder.id) ? FolderOutlined : FolderOpenOutlined"
+              class="folder-icon"
+            />
+            <!-- 重命名中：行内输入框 -->
+            <a-input
+              v-if="renamingFolder?.id === folder.id"
+              v-model:value="renamingFolder.name"
+              size="small"
+              class="folder-rename-input"
+              @click.stop
+              @pressEnter="handleConfirmRename"
+              @blur="handleConfirmRename"
+            />
+            <span v-else class="folder-name">{{ folder.name }}</span>
+            <span class="folder-count">{{ notes.length }}</span>
+
+            <!-- 文件夹操作按钮（hover 显示） -->
+            <div class="folder-actions" @click.stop>
+              <a-tooltip title="重命名">
+                <a-button
+                  type="text" size="small" shape="circle"
+                  @click="handleStartRename(folder)"
+                >
+                  <template #icon><EditOutlined /></template>
+                </a-button>
+              </a-tooltip>
+              <a-tooltip title="删除文件夹">
+                <a-button
+                  type="text" size="small" shape="circle" danger
+                  @click="handleDeleteFolder(folder.id, folder.name)"
+                >
+                  <template #icon><DeleteOutlined /></template>
+                </a-button>
+              </a-tooltip>
+            </div>
+          </div>
+
+          <!-- 文件夹内的笔记列表（可折叠） -->
+          <div v-show="!isCollapsed(folder.id)" class="folder-notes">
+            <div
+              v-for="item in notes"
+              :key="item.id"
               class="note-item"
               :class="{ active: item.id === selectedNoteId }"
+              draggable="true"
               @click="handleSelectNote(item.id)"
+              @dragstart="handleNoteDragStart(item.id)"
             >
-              <a-list-item-meta :description="new Date(item.updatedAt).toLocaleDateString()">
-                <template #title>
-                  <span class="note-title">{{ item.title || '未命名笔记' }}</span>
-                </template>
-              </a-list-item-meta>
-            </a-list-item>
-          </template>
-        </a-list>
+              <span class="note-title">{{ item.title || '未命名笔记' }}</span>
+              <span class="note-date">{{ new Date(item.updatedAt).toLocaleDateString() }}</span>
+            </div>
+            <!-- 文件夹为空时的提示 -->
+            <div v-if="notes.length === 0" class="folder-empty">拖拽笔记到此处</div>
+          </div>
+        </div>
       </div>
+
+      <!-- 新建文件夹弹窗 -->
+      <a-modal
+        v-model:open="newFolderModalVisible"
+        title="新建文件夹"
+        ok-text="创建"
+        cancel-text="取消"
+        @ok="handleCreateFolder"
+      >
+        <a-input
+          v-model:value="newFolderName"
+          placeholder="文件夹名称"
+          @pressEnter="handleCreateFolder"
+        />
+      </a-modal>
     </div>
 
     <div v-if="noteStore.currentNote" class="editor-area">
@@ -696,24 +1005,38 @@ const handleExportWord = async () => {
 }
 
 .note-list {
-  width: 250px;
+  width: 260px;
   border-right: 1px solid #f0f0f0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .list-header {
-  padding: 16px;
+  padding: 12px 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid #f0f0f0;
+  flex-shrink: 0;
+}
+
+/* 笔记列表滚动区 */
+.list-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px 0;
 }
 
 .note-item {
   cursor: pointer;
-  padding: 12px 16px;
-  transition: background-color 0.3s;
+  padding: 8px 16px;
+  transition: background-color 0.15s;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-radius: 0;
+  user-select: none;
 }
 
 .note-item:hover {
@@ -728,6 +1051,91 @@ const handleExportWord = async () => {
 .note-title {
   font-weight: 500;
   color: #333;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.note-date {
+  font-size: 11px;
+  color: #aaa;
+}
+
+/* ── 文件夹样式 ─────────────────────────────────────────────────────────── */
+
+.folder-group {
+  margin-bottom: 2px;
+}
+
+/* 文件夹标题行 */
+.folder-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  cursor: pointer;
+  border-radius: 6px;
+  margin: 0 4px;
+  transition: background-color 0.15s;
+  position: relative;
+}
+
+.folder-header:hover {
+  background-color: #f5f5f5;
+}
+
+.folder-icon {
+  font-size: 14px;
+  color: #faad14;
+  flex-shrink: 0;
+}
+
+.folder-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.folder-count {
+  font-size: 11px;
+  color: #bbb;
+  background: #f0f0f0;
+  border-radius: 999px;
+  padding: 1px 6px;
+  flex-shrink: 0;
+}
+
+/* 文件夹操作按钮：默认隐藏，hover 时显示 */
+.folder-actions {
+  display: none;
+  align-items: center;
+  gap: 2px;
+}
+
+.folder-header:hover .folder-actions {
+  display: flex;
+}
+
+.folder-rename-input {
+  flex: 1;
+  font-size: 13px;
+}
+
+/* 文件夹内的笔记列表：缩进显示 */
+.folder-notes {
+  padding-left: 18px;
+}
+
+.folder-empty {
+  font-size: 11px;
+  color: #ccc;
+  padding: 6px 16px;
+  font-style: italic;
 }
 
 .editor-area {
@@ -779,7 +1187,7 @@ const handleExportWord = async () => {
   border-radius: 4px;
 }
 
-/* 淇濊瘉 Markdown 鍐呭鐨勫浘鐗囩瓑涓嶄細瓒呭嚭杈圭晫 */
+/* 保证 Markdown 内容的图片等不会超出边界 */
 .markdown-body img {
   max-width: 100%;
 }

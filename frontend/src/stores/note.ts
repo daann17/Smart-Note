@@ -10,6 +10,9 @@ export interface Note {
     id: number;
     name: string;
   };
+  /** 所属文件夹 ID，null 表示笔记位于笔记本根目录 */
+  folderId?: number | null;
+  folder?: { id: number; name: string } | null;
   title: string;
   content: string;
   contentHtml: string;

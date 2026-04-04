@@ -54,6 +54,9 @@ public interface NoteRepository extends JpaRepository<Note, Long>, JpaSpecificat
 
     List<Note> findByStatusAndUpdatedAtBefore(String status, LocalDateTime cutoffDate);
 
+    /** 获取指定文件夹内的所有笔记（用于删除文件夹时孤儿化处理） */
+    List<Note> findByFolderId(Long folderId);
+
     @Query("""
         SELECT n.notebook.user.id AS userId, COUNT(n) AS total
         FROM Note n
