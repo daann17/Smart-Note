@@ -1355,4 +1355,329 @@ onUnmounted(() => {
     align-items: stretch;
   }
 }
+
+/* Notion-inspired overrides */
+.share-container {
+  align-items: flex-start;
+  padding: 32px 20px 56px;
+  background: transparent;
+}
+
+.loading-state,
+.error-state,
+.code-state {
+  max-width: 1040px;
+  margin: 56px auto 0;
+}
+
+.code-card {
+  border-radius: 20px;
+  border: 1px solid var(--sn-border);
+  box-shadow: var(--sn-shadow-card);
+  background: var(--sn-surface);
+}
+
+.code-hint {
+  color: var(--sn-text-soft);
+}
+
+.lock-icon {
+  color: var(--sn-focus);
+}
+
+.share-content-wrapper {
+  max-width: 1040px;
+  min-height: auto;
+  padding: 40px;
+  border-radius: 24px;
+  background: var(--sn-surface);
+  border: 1px solid var(--sn-border);
+  box-shadow: var(--sn-shadow-deep);
+}
+
+.share-header {
+  padding-bottom: 24px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--sn-border);
+}
+
+.title {
+  max-width: 780px;
+  margin-bottom: 18px;
+  font-size: clamp(34px, 4vw, 56px);
+  line-height: 1.04;
+  letter-spacing: -1.5px;
+  color: var(--sn-text);
+}
+
+.meta {
+  color: var(--sn-text-soft);
+}
+
+.save-tip {
+  color: var(--sn-text-muted);
+}
+
+.summary-area {
+  margin-bottom: 28px;
+}
+
+.summary-area :deep(.ant-alert) {
+  border-radius: 16px;
+}
+
+.editor-area-wrapper,
+.content-readonly {
+  gap: 20px;
+}
+
+.editor-tip {
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 117, 222, 0.14);
+  background: var(--sn-blue-soft);
+  color: var(--sn-focus);
+  font-weight: 600;
+}
+
+.editor-container {
+  border: 1px solid var(--sn-border);
+  border-radius: 20px;
+  background: var(--sn-surface);
+  box-shadow: var(--sn-shadow-card);
+}
+
+.anchor-preview-card {
+  padding: 22px;
+  border-radius: 20px;
+  background: var(--sn-bg-soft);
+  border: 1px solid var(--sn-border);
+}
+
+.anchor-preview-head h3 {
+  font-size: 22px;
+  line-height: 1.15;
+  letter-spacing: -0.3px;
+  color: var(--sn-text);
+}
+
+.anchor-preview-head p {
+  color: var(--sn-text-soft);
+}
+
+.content-area {
+  color: var(--sn-text);
+}
+
+.interactive-content :deep(.share-anchor-block) {
+  border-radius: 14px;
+}
+
+.interactive-content :deep(.share-anchor-block:hover) {
+  background: rgba(0, 117, 222, 0.05);
+  border-color: rgba(0, 117, 222, 0.12);
+}
+
+.interactive-content :deep(.share-anchor-block.is-active) {
+  background: linear-gradient(90deg, rgba(242, 249, 255, 0.96) 0%, rgba(255, 255, 255, 0.98) 100%);
+  border-color: rgba(0, 117, 222, 0.2);
+  box-shadow:
+    inset 4px 0 0 var(--sn-blue),
+    0 12px 24px rgba(0, 117, 222, 0.08);
+}
+
+.interactive-content :deep(.share-anchor-block.is-active)::before {
+  background: var(--sn-blue);
+  box-shadow: 0 10px 18px rgba(0, 117, 222, 0.16);
+}
+
+.interactive-content :deep(.share-anchor-block.has-comments)::after {
+  background: var(--sn-teal);
+  box-shadow: 0 10px 16px rgba(42, 157, 153, 0.18);
+}
+
+.anchor-selection-banner {
+  margin-top: 24px;
+  border: 1px solid rgba(0, 117, 222, 0.14);
+  background: linear-gradient(180deg, #ffffff 0%, var(--sn-blue-soft) 100%);
+}
+
+.anchor-selection-icon {
+  color: var(--sn-focus);
+}
+
+.anchor-selection-copy strong {
+  color: var(--sn-text);
+}
+
+.anchor-selection-copy span {
+  color: var(--sn-focus);
+}
+
+.anchor-selection-copy small {
+  color: var(--sn-text-soft);
+}
+
+.anchor-selection-clear {
+  background: var(--sn-blue);
+}
+
+.comments-section {
+  margin-top: 36px;
+  padding-top: 28px;
+  border-top: 1px solid var(--sn-border);
+}
+
+.comments-title {
+  font-size: 28px;
+  line-height: 1.12;
+  letter-spacing: -0.5px;
+  color: var(--sn-text);
+}
+
+.comments-subtitle {
+  color: var(--sn-text-soft);
+}
+
+.comment-input-area {
+  padding: 20px;
+  border-radius: 20px;
+  background: var(--sn-bg-soft);
+  border: 1px solid var(--sn-border);
+}
+
+.comment-mode-title {
+  color: var(--sn-text);
+}
+
+.comment-mode-hint,
+.comment-tip,
+.comment-time,
+.comment-resolved-meta {
+  color: var(--sn-text-soft);
+}
+
+.active-anchor-chip {
+  border-radius: var(--sn-radius-pill);
+  border: 1px solid rgba(0, 117, 222, 0.14);
+  background: #ffffff;
+}
+
+.clear-anchor-btn {
+  color: var(--sn-focus);
+}
+
+.comment-item {
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: #ffffff;
+  border: 1px solid var(--sn-border);
+  box-shadow: var(--sn-shadow-card);
+}
+
+.comment-item.resolved {
+  background: #fbfff9;
+  border-color: rgba(26, 174, 57, 0.18);
+}
+
+.comment-author {
+  color: var(--sn-text);
+}
+
+.comment-anchor-btn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 12px;
+  border-radius: var(--sn-radius-pill);
+  background: var(--sn-blue-soft);
+  color: var(--sn-focus);
+}
+
+.comment-anchor-btn.missing {
+  background: rgba(221, 91, 0, 0.1);
+  color: var(--sn-orange);
+}
+
+.comment-anchor-preview {
+  border: 1px solid var(--sn-border);
+  background: var(--sn-bg-soft);
+  color: var(--sn-text-soft);
+}
+
+.comment-content {
+  color: var(--sn-text);
+}
+
+.comment-thread-actions {
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.comment-reply-btn,
+.comment-delete-btn {
+  border-radius: var(--sn-radius-pill);
+  padding: 6px 12px;
+  border: 1px solid var(--sn-border);
+  background: #ffffff;
+}
+
+.comment-reply-btn {
+  color: var(--sn-focus);
+}
+
+.comment-reply-btn.active {
+  background: var(--sn-blue-soft);
+}
+
+.comment-delete-btn {
+  color: var(--sn-red);
+}
+
+.comment-delete-btn.blocked {
+  background: rgba(221, 91, 0, 0.08);
+  color: var(--sn-orange);
+}
+
+.comment-reply-count {
+  color: var(--sn-text-muted);
+}
+
+.comment-replies {
+  padding-left: 14px;
+  border-left: 2px solid rgba(0, 0, 0, 0.06);
+}
+
+.comment-reply-item,
+.comment-reply-editor {
+  border-radius: 16px;
+  border: 1px solid var(--sn-border);
+  background: var(--sn-bg-soft);
+}
+
+.share-footer {
+  margin-top: 36px;
+  padding-top: 22px;
+  border-top: 1px solid var(--sn-border);
+  color: var(--sn-text-muted);
+}
+
+.share-footer a {
+  color: var(--sn-blue);
+}
+
+@media (max-width: 900px) {
+  .share-container {
+    padding: 16px;
+  }
+
+  .share-content-wrapper {
+    padding: 24px 20px;
+    border-radius: 20px;
+  }
+
+  .title {
+    font-size: clamp(28px, 8vw, 40px);
+  }
+}
 </style>

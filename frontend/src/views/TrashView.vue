@@ -1,17 +1,19 @@
 <script setup lang="ts">
-import { onMounted, createVNode } from 'vue';
+import { computed, createVNode, onMounted } from 'vue';
 import { useNoteStore } from '../stores/note';
 import { useRouter } from 'vue-router';
-import { 
-  ArrowLeftOutlined, 
-  DeleteOutlined, 
-  ReloadOutlined, 
-  ExclamationCircleOutlined 
+import {
+  ArrowLeftOutlined,
+  DeleteOutlined,
+  ReloadOutlined,
+  ExclamationCircleOutlined,
 } from '@ant-design/icons-vue';
 import { message, Modal } from 'ant-design-vue';
 
 const noteStore = useNoteStore();
 const router = useRouter();
+
+const trashCount = computed(() => noteStore.trashNotes.length);
 
 onMounted(() => {
   noteStore.fetchTrashNotes();
@@ -30,7 +32,7 @@ const handleHardDelete = (id: number) => {
   Modal.confirm({
     title: '确认彻底删除',
     icon: createVNode(ExclamationCircleOutlined),
-    content: '彻底删除后将无法恢复，确认要删除该笔记吗？',
+    content: '彻底删除后无法恢复，确认继续吗？',
     okText: '确认删除',
     okType: 'danger',
     cancelText: '取消',
@@ -41,7 +43,7 @@ const handleHardDelete = (id: number) => {
       } catch (error) {
         message.error('删除失败');
       }
-    }
+    },
   });
 };
 
@@ -50,11 +52,11 @@ const handleEmptyTrash = () => {
     message.info('回收站已经是空的');
     return;
   }
-  
+
   Modal.confirm({
     title: '确认清空回收站',
     icon: createVNode(ExclamationCircleOutlined),
-    content: '清空后所有回收站中的笔记将无法恢复，确认清空吗？',
+    content: '清空后所有回收站笔记都将不可恢复。',
     okText: '确认清空',
     okType: 'danger',
     cancelText: '取消',
@@ -65,45 +67,55 @@ const handleEmptyTrash = () => {
       } catch (error) {
         message.error('清空失败');
       }
-    }
+    },
   });
 };
 </script>
 
 <template>
-  <div class="trash-layout">
-    <div class="header">
-      <div style="display: flex; align-items: center; gap: 16px;">
-        <a-button type="text" shape="circle" @click="router.push('/home')">
+  <div class="page-shell trash-page">
+    <header class="page-header">
+      <div class="header-main">
+        <a-button type="text" class="back-btn" @click="router.push('/home')">
           <template #icon><ArrowLeftOutlined /></template>
+          返回工作台
         </a-button>
-        <h2 style="margin: 0; display: flex; align-items: center; gap: 8px;">
-          <DeleteOutlined /> 回收站
-        </h2>
+        <div>
+          <span class="page-kicker">Trash</span>
+          <h1 class="page-title">回收站</h1>
+          <p class="page-description">这里保留被移除的笔记，你可以恢复它们，或者执行彻底删除。</p>
+        </div>
       </div>
-      <a-button danger @click="handleEmptyTrash" :disabled="noteStore.trashNotes.length === 0">
+
+      <a-button danger @click="handleEmptyTrash" :disabled="trashCount === 0">
         <template #icon><DeleteOutlined /></template>
         清空回收站
       </a-button>
-    </div>
+    </header>
 
-    <div class="content">
-      <div v-if="noteStore.trashNotes.length === 0" class="empty-state">
+    <section class="trash-summary metric-grid">
+      <article class="metric-card">
+        <span>待处理笔记</span>
+        <strong>{{ trashCount }}</strong>
+        <small>保留在回收站中的内容数量</small>
+      </article>
+    </section>
+
+    <section class="trash-panel surface-card">
+      <div v-if="trashCount === 0" class="empty-state">
         <a-empty description="回收站为空" />
       </div>
-      
+
       <a-list v-else item-layout="horizontal" :data-source="noteStore.trashNotes" class="trash-list">
         <template #renderItem="{ item }">
           <a-list-item class="trash-item">
-            <a-list-item-meta
-              :description="`删除于: ${new Date(item.updatedAt).toLocaleString()}`"
-            >
+            <a-list-item-meta :description="`删除时间：${new Date(item.updatedAt).toLocaleString()}`">
               <template #title>
                 <span class="note-title">{{ item.title || '无标题' }}</span>
-                <span class="notebook-name" v-if="item.notebook"> (来自: {{ item.notebook.name }})</span>
+                <span class="notebook-name" v-if="item.notebook">来自：{{ item.notebook.name }}</span>
               </template>
             </a-list-item-meta>
-            
+
             <template #actions>
               <a-button type="link" @click="handleRestore(item.id)">
                 <template #icon><ReloadOutlined /></template>
@@ -116,63 +128,60 @@ const handleEmptyTrash = () => {
           </a-list-item>
         </template>
       </a-list>
-    </div>
+    </section>
   </div>
 </template>
 
 <style scoped>
-.trash-layout {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  background: #f0f2f5;
+.trash-page {
+  display: grid;
+  gap: 20px;
 }
 
-.header {
-  background: #fff;
-  padding: 16px 24px;
+.header-main {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid #e8e8e8;
+  align-items: flex-start;
+  gap: 16px;
 }
 
-.content {
-  flex: 1;
-  padding: 24px;
-  overflow-y: auto;
+.back-btn {
+  margin-top: 4px;
+}
+
+.trash-summary,
+.trash-panel {
+  width: min(var(--sn-container-width), 100%);
+  margin: 0 auto;
+}
+
+.trash-summary {
+  grid-template-columns: minmax(0, 280px);
+}
+
+.trash-panel {
+  padding: 8px 24px;
 }
 
 .empty-state {
+  min-height: 300px;
   display: flex;
-  justify-content: center;
   align-items: center;
-  height: 100%;
-  background: #fff;
-  border-radius: 8px;
-}
-
-.trash-list {
-  background: #fff;
-  border-radius: 8px;
-  padding: 0 24px;
+  justify-content: center;
 }
 
 .trash-item {
-  transition: all 0.3s;
-}
-
-.trash-item:hover {
-  background-color: #fafafa;
+  padding-block: 18px;
 }
 
 .note-title {
   font-size: 16px;
-  font-weight: 500;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.95);
 }
 
 .notebook-name {
-  color: #888;
-  font-size: 12px;
+  margin-left: 10px;
+  color: #615d59;
+  font-size: 13px;
 }
 </style>

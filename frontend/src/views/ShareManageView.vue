@@ -1,13 +1,30 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { ArrowLeftOutlined, LinkOutlined, DeleteOutlined, MessageOutlined, CloseCircleOutlined } from '@ant-design/icons-vue';
+import {
+  ArrowLeftOutlined,
+  LinkOutlined,
+  DeleteOutlined,
+  MessageOutlined,
+  CloseCircleOutlined,
+} from '@ant-design/icons-vue';
 import api from '../api';
 import { message, Modal } from 'ant-design-vue';
 
 const router = useRouter();
 const shares = ref<any[]>([]);
 const loading = ref(true);
+
+const shareStats = computed(() => {
+  const active = shares.value.filter((item) => item.isActive).length;
+  const expired = shares.value.filter((item) => item.expireAt && new Date(item.expireAt) < new Date()).length;
+
+  return {
+    total: shares.value.length,
+    active,
+    expired,
+  };
+});
 
 const fetchShares = async () => {
   loading.value = true;
@@ -28,14 +45,14 @@ onMounted(() => {
 const copyLink = (token: string) => {
   const url = `${window.location.origin}/share/${token}`;
   navigator.clipboard.writeText(url).then(() => {
-    message.success('链接已复制');
+    message.success('分享链接已复制');
   });
 };
 
 const disableShare = (noteId: number) => {
   Modal.confirm({
     title: '关闭分享',
-    content: '关闭后该分享链接将立即失效，确定要关闭吗？',
+    content: '关闭后当前分享链接会立刻失效，确认继续吗？',
     okText: '确认关闭',
     okType: 'danger',
     cancelText: '取消',
@@ -47,14 +64,14 @@ const disableShare = (noteId: number) => {
       } catch (error) {
         message.error('操作失败');
       }
-    }
+    },
   });
 };
 
 const deleteShareRecord = (shareId: number) => {
   Modal.confirm({
     title: '删除分享记录',
-    content: '删除后将移除该分享记录及其评论数据，分享链接会永久失效，确定继续吗？',
+    content: '删除后会移除该条分享记录及相关评论数据，且无法恢复。',
     okText: '确认删除',
     okType: 'danger',
     cancelText: '取消',
@@ -66,55 +83,92 @@ const deleteShareRecord = (shareId: number) => {
       } catch (error) {
         message.error('删除分享记录失败');
       }
-    }
+    },
   });
 };
 </script>
 
 <template>
-  <div class="share-manage-layout">
-    <div class="header">
-      <a-button type="text" shape="circle" @click="router.push('/home')">
-        <template #icon><ArrowLeftOutlined /></template>
-      </a-button>
-      <h2 style="margin: 0 0 0 16px;">我的分享</h2>
-    </div>
-    
-    <div class="content">
-      <a-table :dataSource="shares" :loading="loading" rowKey="id" :pagination="false">
-        <a-table-column title="笔记标题" dataIndex="note" key="note">
+  <div class="page-shell share-page">
+    <header class="page-header">
+      <div class="header-main">
+        <a-button type="text" class="back-btn" @click="router.push('/home')">
+          <template #icon><ArrowLeftOutlined /></template>
+          返回工作台
+        </a-button>
+        <div>
+          <span class="page-kicker">Share Center</span>
+          <h1 class="page-title">我的分享</h1>
+          <p class="page-description">集中查看分享状态、过期时间、提取码与评论入口。</p>
+        </div>
+      </div>
+    </header>
+
+    <section class="share-summary metric-grid">
+      <article class="metric-card">
+        <span>分享总数</span>
+        <strong>{{ shareStats.total }}</strong>
+        <small>当前账号累计生成的分享记录</small>
+      </article>
+      <article class="metric-card">
+        <span>生效中</span>
+        <strong>{{ shareStats.active }}</strong>
+        <small>仍可访问的分享链接</small>
+      </article>
+      <article class="metric-card">
+        <span>已过期</span>
+        <strong>{{ shareStats.expired }}</strong>
+        <small>需要重新生成或清理的记录</small>
+      </article>
+    </section>
+
+    <section class="share-table-wrap surface-card">
+      <a-table :data-source="shares" :loading="loading" row-key="id" :pagination="false">
+        <a-table-column title="笔记标题" data-index="note" key="note">
           <template #default="{ text: note }">
-            <a @click="router.push(`/notebook/${note.notebook?.id}?noteId=${note.id}`)">{{ note.title || '无标题' }}</a>
+            <a @click="router.push(`/notebook/${note.notebook?.id}?noteId=${note.id}`)">
+              {{ note.title || '无标题' }}
+            </a>
           </template>
         </a-table-column>
-        <a-table-column title="创建时间" dataIndex="createdAt" key="createdAt">
+
+        <a-table-column title="创建时间" data-index="createdAt" key="createdAt">
           <template #default="{ text }">
             {{ new Date(text).toLocaleString() }}
           </template>
         </a-table-column>
-        <a-table-column title="过期时间" dataIndex="expireAt" key="expireAt">
+
+        <a-table-column title="过期时间" data-index="expireAt" key="expireAt">
           <template #default="{ text }">
             <span v-if="text">{{ new Date(text).toLocaleString() }}</span>
-            <span v-else style="color: #52c41a;">永久有效</span>
+            <span class="meta-positive" v-else>永久有效</span>
           </template>
         </a-table-column>
-        <a-table-column title="提取码" dataIndex="extractionCode" key="extractionCode">
+
+        <a-table-column title="提取码" data-index="extractionCode" key="extractionCode">
           <template #default="{ text }">
             <span v-if="text">{{ text }}</span>
-            <span v-else style="color: #999;">无</span>
+            <span class="meta-muted">无</span>
           </template>
         </a-table-column>
-        <a-table-column title="状态" dataIndex="isActive" key="isActive">
+
+        <a-table-column title="状态" data-index="isActive" key="isActive">
           <template #default="{ text, record }">
-            <a-tag v-if="!text" color="default">已关闭</a-tag>
+            <a-tag v-if="!text">已关闭</a-tag>
             <a-tag v-else-if="record.expireAt && new Date(record.expireAt) < new Date()" color="error">已过期</a-tag>
             <a-tag v-else color="success">生效中</a-tag>
           </template>
         </a-table-column>
+
         <a-table-column title="操作" key="action">
           <template #default="{ record }">
-            <div style="display: flex; gap: 8px;">
-              <a-button type="link" size="small" @click="copyLink(record.token)" :disabled="!record.isActive || (record.expireAt && new Date(record.expireAt) < new Date())">
+            <div class="action-group">
+              <a-button
+                type="link"
+                size="small"
+                @click="copyLink(record.token)"
+                :disabled="!record.isActive || (record.expireAt && new Date(record.expireAt) < new Date())"
+              >
                 <template #icon><LinkOutlined /></template>
                 复制链接
               </a-button>
@@ -139,37 +193,56 @@ const deleteShareRecord = (shareId: number) => {
           </template>
         </a-table-column>
       </a-table>
-    </div>
+    </section>
   </div>
 </template>
 
 <style scoped>
-.share-manage-layout {
-  height: 100vh;
+.share-page {
+  display: grid;
+  gap: 20px;
+}
+
+.header-main {
   display: flex;
-  flex-direction: column;
-  background-color: #f0f2f5;
+  align-items: flex-start;
+  gap: 16px;
 }
 
-.header {
-  background: #fff;
-  padding: 16px 24px;
+.back-btn {
+  margin-top: 4px;
+}
+
+.share-summary {
+  width: min(var(--sn-container-width), 100%);
+  margin: 0 auto;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.share-table-wrap {
+  width: min(var(--sn-container-width), 100%);
+  margin: 0 auto;
+  padding: 18px 18px 8px;
+}
+
+.action-group {
   display: flex;
-  align-items: center;
-  box-shadow: 0 1px 4px rgba(0,21,41,.08);
-  z-index: 1;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
-.content {
-  flex: 1;
-  padding: 24px;
-  overflow: auto;
+.meta-muted {
+  color: #a39e98;
 }
 
-:deep(.ant-table-wrapper) {
-  background: #fff;
-  padding: 24px;
-  border-radius: 8px;
-  box-shadow: 0 1px 2px -2px rgba(0,0,0,0.16), 0 3px 6px 0 rgba(0,0,0,0.12), 0 5px 12px 4px rgba(0,0,0,0.09);
+.meta-positive {
+  color: #1aae39;
+  font-weight: 600;
+}
+
+@media (max-width: 960px) {
+  .share-summary {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

@@ -589,8 +589,8 @@ watch(
   flex-direction: column;
   height: 100%;
   background:
-    radial-gradient(circle at top, rgba(59, 130, 246, 0.08), transparent 28%),
-    linear-gradient(180deg, #f8fbff 0%, #f4f7fb 100%);
+    radial-gradient(circle at top, rgba(0, 117, 222, 0.06), transparent 28%),
+    linear-gradient(180deg, #fbfaf8 0%, #f6f5f4 100%);
 }
 
 .chat-messages {
@@ -606,12 +606,12 @@ watch(
   padding: 14px 16px;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.86);
-  border: 1px solid rgba(191, 219, 254, 0.6);
+  border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .quick-prompts-title {
   margin-bottom: 10px;
-  color: #475569;
+  color: #615d59;
   font-size: 12px;
   font-weight: 700;
 }
@@ -623,11 +623,11 @@ watch(
 }
 
 .quick-prompt-chip {
-  border: none;
+  border: 1px solid rgba(0, 0, 0, 0.08);
   padding: 8px 12px;
   border-radius: 999px;
-  background: #eff6ff;
-  color: #1d4ed8;
+  background: #ffffff;
+  color: #0075de;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -635,7 +635,7 @@ watch(
 }
 
 .quick-prompt-chip:hover {
-  background: #dbeafe;
+  background: #f2f9ff;
   transform: translateY(-1px);
 }
 
@@ -662,18 +662,18 @@ watch(
 }
 
 .message-user .message-bubble {
-  background: linear-gradient(135deg, #1677ff, #2563eb);
+  background: #0075de;
   color: #fff;
   border-top-right-radius: 6px;
-  box-shadow: 0 12px 24px rgba(37, 99, 235, 0.2);
+  box-shadow: var(--sn-shadow-card);
 }
 
 .message-ai .message-bubble {
   background: rgba(255, 255, 255, 0.94);
-  color: #1f2937;
-  border: 1px solid rgba(226, 232, 240, 0.8);
+  color: rgba(0, 0, 0, 0.95);
+  border: 1px solid rgba(0, 0, 0, 0.08);
   border-top-left-radius: 6px;
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+  box-shadow: var(--sn-shadow-card);
 }
 
 .message-sources {
@@ -689,9 +689,9 @@ watch(
   gap: 4px;
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid rgba(191, 219, 254, 0.8);
+  border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 14px;
-  background: linear-gradient(180deg, #f8fbff 0%, #eef6ff 100%);
+  background: linear-gradient(180deg, #ffffff 0%, #fbfaf8 100%);
   text-align: left;
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
@@ -699,8 +699,8 @@ watch(
 
 .source-card:hover {
   transform: translateY(-1px);
-  border-color: rgba(59, 130, 246, 0.5);
-  box-shadow: 0 10px 24px rgba(59, 130, 246, 0.12);
+  border-color: rgba(0, 117, 222, 0.2);
+  box-shadow: var(--sn-shadow-card);
 }
 
 .source-kind {
@@ -714,28 +714,28 @@ watch(
 }
 
 .source-kind.current {
-  background: rgba(59, 130, 246, 0.14);
-  color: #1d4ed8;
+  background: #f2f9ff;
+  color: #0075de;
 }
 
 .source-kind.related {
-  background: rgba(14, 165, 233, 0.12);
-  color: #0369a1;
+  background: rgba(0, 0, 0, 0.05);
+  color: #615d59;
 }
 
 .source-title {
-  color: #0f172a;
+  color: rgba(0, 0, 0, 0.95);
   font-size: 13px;
   line-height: 1.4;
 }
 
 .source-time {
-  color: #64748b;
+  color: #a39e98;
   font-size: 11px;
 }
 
 .source-snippet {
-  color: #475569;
+  color: #615d59;
   font-size: 12px;
   line-height: 1.6;
 }
@@ -743,7 +743,7 @@ watch(
 .chat-input-area {
   background: rgba(255, 255, 255, 0.96);
   padding: 16px;
-  border-top: 1px solid rgba(226, 232, 240, 0.8);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .context-indicator {
@@ -755,8 +755,8 @@ watch(
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  color: #1677ff;
-  background: #e6f4ff;
+  color: #0075de;
+  background: #f2f9ff;
   padding: 4px 10px;
   border-radius: 999px;
 }
@@ -770,7 +770,7 @@ watch(
 }
 
 .chat-tip {
-  color: #64748b;
+  color: #615d59;
   font-size: 12px;
 }
 
@@ -784,7 +784,7 @@ watch(
 .dot {
   width: 6px;
   height: 6px;
-  background: #94a3b8;
+  background: #a39e98;
   border-radius: 50%;
   animation: bounce 1.4s infinite ease-in-out both;
 }
@@ -822,11 +822,12 @@ watch(
 }
 
 :deep(.markdown-body pre) {
-  background: #f8fafc;
+  background: #f6f5f4;
   padding: 10px 12px;
   border-radius: 10px;
   overflow-x: auto;
   margin: 10px 0;
+  border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 :deep(.markdown-body code) {

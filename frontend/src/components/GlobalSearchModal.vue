@@ -251,9 +251,9 @@ onBeforeUnmount(() => {
 <style>
 .global-search-modal .ant-modal-content {
   padding: 0;
-  border-radius: 16px;
+  border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.18);
+  box-shadow: var(--sn-shadow-deep);
 }
 </style>
 
@@ -267,13 +267,13 @@ onBeforeUnmount(() => {
 
 .search-icon {
   font-size: 18px;
-  color: #94a3b8;
+  color: #a39e98;
   flex-shrink: 0;
   transition: color 0.2s;
 }
 
 .search-icon.spin {
-  color: #1890ff;
+  color: #0075de;
   animation: spin 0.8s linear infinite;
 }
 
@@ -288,19 +288,19 @@ onBeforeUnmount(() => {
   outline: none;
   font-size: 16px;
   font-weight: 500;
-  color: #0f172a;
+  color: rgba(0, 0, 0, 0.95);
   background: transparent;
-  caret-color: #1890ff;
+  caret-color: #0075de;
 }
 
 .search-input::placeholder {
-  color: #94a3b8;
+  color: #a39e98;
   font-weight: 400;
 }
 
 .search-divider {
   height: 1px;
-  background: rgba(148, 163, 184, 0.16);
+  background: rgba(0, 0, 0, 0.08);
 }
 
 .search-results {
@@ -315,7 +315,7 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 10px;
   padding: 40px 0;
-  color: #94a3b8;
+  color: #a39e98;
   font-size: 14px;
 }
 
@@ -336,12 +336,12 @@ onBeforeUnmount(() => {
 
 .result-item:hover,
 .result-item.active {
-  background: rgba(24, 144, 255, 0.07);
+  background: #f2f9ff;
 }
 
 .result-icon {
   font-size: 16px;
-  color: #94a3b8;
+  color: #a39e98;
   flex-shrink: 0;
 }
 
@@ -356,47 +356,47 @@ onBeforeUnmount(() => {
 .result-title {
   font-size: 14px;
   font-weight: 500;
-  color: #0f172a;
+  color: rgba(0, 0, 0, 0.95);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .result-title mark {
-  background: rgba(24, 144, 255, 0.18);
-  color: #1890ff;
+  background: rgba(0, 117, 222, 0.14);
+  color: #0075de;
   border-radius: 2px;
   padding: 0 1px;
 }
 
 .result-meta {
   font-size: 12px;
-  color: #94a3b8;
+  color: #615d59;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .result-date {
-  color: #cbd5e1;
+  color: #a39e98;
 }
 
 .result-enter-hint {
   flex-shrink: 0;
-  border: 1px solid rgba(148, 163, 184, 0.3);
+  border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 5px;
   padding: 2px 7px;
   font-size: 11px;
-  color: #94a3b8;
-  background: rgba(248, 250, 252, 0.9);
+  color: #615d59;
+  background: #fbfaf8;
   font-family: inherit;
 }
 
 .search-footer {
   padding: 8px 20px;
-  border-top: 1px solid rgba(148, 163, 184, 0.12);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
   font-size: 12px;
-  color: #94a3b8;
+  color: #a39e98;
   text-align: right;
 }
 </style>

@@ -2123,9 +2123,9 @@ onBeforeUnmount(() => {
   height: 100%;
   min-height: 0;
   background:
-    radial-gradient(circle at top right, rgba(15, 118, 110, 0.10), transparent 30%),
-    linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
-  border-left: 1px solid rgba(148, 163, 184, 0.16);
+    radial-gradient(circle at top right, rgba(0, 117, 222, 0.06), transparent 28%),
+    linear-gradient(180deg, #fbfaf8 0%, #f6f5f4 100%);
+  border-left: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .editor-toolbar,
@@ -2135,16 +2135,16 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   gap: 12px;
   padding: 12px 18px;
-  background: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(18px);
 }
 
 .editor-toolbar {
-  border-bottom: 1px solid rgba(148, 163, 184, 0.20);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .editor-statusbar {
-  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
   padding-top: 8px;
   padding-bottom: 8px;
 }
@@ -2163,21 +2163,21 @@ onBeforeUnmount(() => {
 }
 
 .toolbar-btn {
-  border: 1px solid rgba(148, 163, 184, 0.24);
+  border: 1px solid rgba(0, 0, 0, 0.1);
   background: rgba(255, 255, 255, 0.92);
-  color: #1f2937;
-  border-radius: 999px;
+  color: rgba(0, 0, 0, 0.95);
+  border-radius: 8px;
   padding: 7px 12px;
   min-width: 42px;
   font-size: 13px;
   line-height: 1;
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
+  box-shadow: var(--sn-shadow-card);
 }
 
 .toolbar-btn.active,
 .toolbar-btn:hover {
-  border-color: rgba(13, 148, 136, 0.34);
-  background: rgba(240, 253, 250, 0.98);
+  border-color: rgba(0, 117, 222, 0.2);
+  background: #f2f9ff;
 }
 
 .editor-workspace {
@@ -2218,10 +2218,8 @@ onBeforeUnmount(() => {
   overflow: hidden;
   border-radius: 24px;
   background: rgba(255, 255, 255, 0.92);
-  box-shadow:
-    0 18px 45px rgba(15, 23, 42, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  border: 1px solid rgba(148, 163, 184, 0.16);
+  box-shadow: var(--sn-shadow-card);
+  border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .split-divider {
@@ -2245,7 +2243,7 @@ onBeforeUnmount(() => {
   left: calc(50% - 1px);
   width: 2px;
   border-radius: 999px;
-  background: linear-gradient(180deg, rgba(148, 163, 184, 0), rgba(148, 163, 184, 0.72), rgba(148, 163, 184, 0));
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.16), rgba(0, 0, 0, 0));
   transition: opacity 0.2s ease, transform 0.2s ease;
   opacity: 0.65;
 }
@@ -2258,8 +2256,8 @@ onBeforeUnmount(() => {
   height: 92px;
   border-radius: 999px;
   transform: translate(-50%, -50%);
-  background: linear-gradient(180deg, rgba(20, 184, 166, 0.26), rgba(15, 23, 42, 0.18), rgba(20, 184, 166, 0.26));
-  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12);
+  background: linear-gradient(180deg, rgba(0, 117, 222, 0.18), rgba(0, 0, 0, 0.1), rgba(0, 117, 222, 0.18));
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.08);
   transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
@@ -2272,8 +2270,8 @@ onBeforeUnmount(() => {
 .split-divider:hover .split-divider-handle,
 .editor-workspace.resizing .split-divider-handle {
   transform: translate(-50%, -50%) scaleX(1.24);
-  background: linear-gradient(180deg, rgba(13, 148, 136, 0.42), rgba(15, 23, 42, 0.26), rgba(13, 148, 136, 0.42));
-  box-shadow: 0 18px 38px rgba(15, 23, 42, 0.18);
+  background: linear-gradient(180deg, rgba(0, 117, 222, 0.3), rgba(0, 0, 0, 0.18), rgba(0, 117, 222, 0.3));
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.12);
 }
 
 .editor-host,
@@ -2290,7 +2288,7 @@ onBeforeUnmount(() => {
 .markdown-preview {
   max-width: 840px;
   margin: 0 auto;
-  color: #1f2937;
+  color: rgba(0, 0, 0, 0.95);
   line-height: 1.75;
 }
 
@@ -2298,7 +2296,7 @@ onBeforeUnmount(() => {
 .markdown-preview :deep(h2),
 .markdown-preview :deep(h3) {
   line-height: 1.25;
-  color: #0f172a;
+  color: rgba(0, 0, 0, 0.95);
 }
 
 .markdown-preview :deep(h1) {
@@ -2322,16 +2320,17 @@ onBeforeUnmount(() => {
 .markdown-preview :deep(code) {
   padding: 0.14rem 0.4rem;
   border-radius: 0.35rem;
-  background: rgba(15, 23, 42, 0.06);
+  background: rgba(0, 0, 0, 0.05);
   font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
 }
 
 .markdown-preview :deep(pre) {
   padding: 1rem 1.1rem;
   overflow: auto;
-  background: #0f172a;
-  color: #e2e8f0;
+  background: #f6f5f4;
+  color: rgba(0, 0, 0, 0.95);
   border-radius: 1rem;
+  border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .markdown-preview :deep(pre code) {
@@ -2347,15 +2346,15 @@ onBeforeUnmount(() => {
   height: auto;
   margin: 1.15rem auto;
   border-radius: 18px;
-  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.10);
+  box-shadow: var(--sn-shadow-card);
 }
 
 .markdown-preview :deep(blockquote) {
   margin-left: 0;
   padding: 0.1rem 0 0.1rem 1rem;
-  border-left: 4px solid #14b8a6;
-  color: #475569;
-  background: rgba(20, 184, 166, 0.05);
+  border-left: 4px solid #0075de;
+  color: #615d59;
+  background: #f7fbff;
 }
 
 .markdown-preview :deep(table) {
@@ -2366,12 +2365,12 @@ onBeforeUnmount(() => {
 
 .markdown-preview :deep(th),
 .markdown-preview :deep(td) {
-  border: 1px solid rgba(148, 163, 184, 0.3);
+  border: 1px solid rgba(0, 0, 0, 0.1);
   padding: 0.65rem 0.85rem;
 }
 
 .preview-empty {
-  color: #94a3b8;
+  color: #a39e98;
   text-align: center;
   padding: 3rem 0;
 }
@@ -2407,23 +2406,23 @@ onBeforeUnmount(() => {
 }
 
 .status-badge.local {
-  color: #475569;
-  background: rgba(226, 232, 240, 0.86);
+  color: #615d59;
+  background: rgba(0, 0, 0, 0.05);
 }
 
 .status-badge.connecting {
-  color: #9a3412;
-  background: rgba(254, 215, 170, 0.68);
+  color: #dd5b00;
+  background: rgba(221, 91, 0, 0.12);
 }
 
 .status-badge.live {
-  color: #065f46;
-  background: rgba(167, 243, 208, 0.65);
+  color: #1aae39;
+  background: rgba(26, 174, 57, 0.12);
 }
 
 .status-badge.offline {
-  color: #991b1b;
-  background: rgba(254, 202, 202, 0.72);
+  color: #d4380d;
+  background: rgba(212, 56, 13, 0.12);
 }
 
 .status-dot {
@@ -2435,7 +2434,7 @@ onBeforeUnmount(() => {
 
 .status-hint {
   font-size: 12px;
-  color: #64748b;
+  color: #615d59;
 }
 
 .collaborator-pill {
@@ -2461,8 +2460,8 @@ onBeforeUnmount(() => {
 }
 
 .drag-mask {
-  background: rgba(15, 118, 110, 0.14);
-  border: 2px dashed rgba(15, 118, 110, 0.55);
+  background: rgba(0, 117, 222, 0.08);
+  border: 2px dashed rgba(0, 117, 222, 0.28);
 }
 
 .drag-panel {
@@ -2470,14 +2469,14 @@ onBeforeUnmount(() => {
   background: rgba(255, 255, 255, 0.94);
   padding: 18px 26px;
   font-weight: 700;
-  color: #115e59;
+  color: #0075de;
 }
 
 .sync-mask {
   flex-direction: column;
   gap: 12px;
-  background: rgba(248, 250, 252, 0.86);
-  color: #0f172a;
+  background: rgba(246, 245, 244, 0.92);
+  color: rgba(0, 0, 0, 0.95);
   font-weight: 600;
 }
 
@@ -2494,8 +2493,8 @@ onBeforeUnmount(() => {
   overflow: auto;
   border-radius: 20px;
   background:
-    radial-gradient(circle at top right, rgba(20, 184, 166, 0.10), transparent 28%),
-    linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+    radial-gradient(circle at top right, rgba(0, 117, 222, 0.08), transparent 28%),
+    linear-gradient(180deg, #fbfaf8 0%, #f6f5f4 100%);
   padding: 18px;
 }
 
@@ -2505,7 +2504,7 @@ onBeforeUnmount(() => {
   max-height: calc(72vh - 36px);
   object-fit: contain;
   border-radius: 18px;
-  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.18);
+  box-shadow: var(--sn-shadow-deep);
   background: rgba(255, 255, 255, 0.94);
 }
 
@@ -2522,7 +2521,7 @@ onBeforeUnmount(() => {
 }
 
 .editor-image-form-label {
-  color: #0f172a;
+  color: rgba(0, 0, 0, 0.95);
   font-size: 13px;
   font-weight: 700;
 }
@@ -2551,9 +2550,9 @@ onBeforeUnmount(() => {
 }
 
 .editor-image-size-btn.active {
-  border-color: #0f766e;
-  background: rgba(20, 184, 166, 0.14);
-  color: #0f766e;
+  border-color: #0075de;
+  background: #f2f9ff;
+  color: #0075de;
 }
 
 .editor-image-width-input {
@@ -2561,7 +2560,7 @@ onBeforeUnmount(() => {
 }
 
 .editor-image-form-hint {
-  color: #64748b;
+  color: #615d59;
   font-size: 12px;
 }
 

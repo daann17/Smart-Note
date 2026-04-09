@@ -1094,4 +1094,263 @@ onMounted(() => {
     align-items: flex-start;
   }
 }
+
+/* Notion-inspired overrides */
+.share-comments-page {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 28px 24px 40px;
+  background: transparent;
+}
+
+.share-comments-shell {
+  max-width: none;
+}
+
+.share-comments-header {
+  margin-bottom: 24px;
+}
+
+.share-comments-header-main {
+  gap: 16px;
+}
+
+.share-comments-header-main :deep(.ant-btn) {
+  border: 1px solid var(--sn-border);
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.share-comments-kicker {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 10px;
+  border-radius: var(--sn-radius-pill);
+  background: var(--sn-blue-soft);
+  color: var(--sn-focus);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.share-comments-title-block h1 {
+  margin-top: 6px;
+  font-size: clamp(32px, 4vw, 52px);
+  line-height: 1.04;
+  letter-spacing: -1.4px;
+  color: var(--sn-text);
+}
+
+.share-comments-title-block p {
+  color: var(--sn-text-soft);
+}
+
+.share-comments-open-link {
+  color: var(--sn-blue);
+}
+
+.share-comments-loading,
+.share-comments-empty,
+.share-summary-card,
+.share-preview-panel,
+.share-comments-panel {
+  border-radius: 20px;
+  border: 1px solid var(--sn-border);
+  background: var(--sn-surface);
+  box-shadow: var(--sn-shadow-card);
+}
+
+.share-summary-grid {
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.share-summary-card {
+  padding: 22px 20px;
+}
+
+.share-summary-label {
+  color: var(--sn-text-muted);
+  letter-spacing: 0.08em;
+}
+
+.share-summary-card strong {
+  color: var(--sn-text);
+  font-size: 32px;
+  letter-spacing: -0.8px;
+}
+
+.share-summary-card small {
+  color: var(--sn-text-soft);
+}
+
+.share-manage-layout {
+  grid-template-columns: minmax(0, 1.08fr) minmax(380px, 0.92fr);
+  gap: 20px;
+}
+
+.share-preview-panel,
+.share-comments-panel {
+  padding: 22px;
+}
+
+.panel-title {
+  color: var(--sn-text);
+  font-size: 20px;
+  letter-spacing: -0.2px;
+}
+
+.panel-head p {
+  color: var(--sn-text-soft);
+}
+
+.share-preview-active {
+  border-radius: 16px;
+  border: 1px solid rgba(0, 117, 222, 0.14);
+  background: linear-gradient(180deg, #ffffff 0%, var(--sn-blue-soft) 100%);
+  color: var(--sn-focus);
+}
+
+.share-preview-clear {
+  color: var(--sn-focus);
+}
+
+.share-preview-body {
+  padding-right: 4px;
+}
+
+.share-preview-body :deep(.share-anchor-block:hover) {
+  background: rgba(0, 117, 222, 0.05);
+  border-color: rgba(0, 117, 222, 0.12);
+}
+
+.share-preview-body :deep(.share-anchor-block.is-active) {
+  background: linear-gradient(90deg, rgba(242, 249, 255, 0.96) 0%, rgba(255, 255, 255, 0.98) 100%);
+  border-color: rgba(0, 117, 222, 0.2);
+  box-shadow:
+    inset 4px 0 0 var(--sn-blue),
+    0 12px 24px rgba(0, 117, 222, 0.08);
+}
+
+.share-preview-body :deep(.share-anchor-block.has-comments)::after {
+  background: var(--sn-teal);
+  box-shadow: 0 10px 16px rgba(42, 157, 153, 0.18);
+}
+
+.share-comments-empty-tip {
+  color: var(--sn-text-soft);
+}
+
+.share-filter-btn {
+  border: 1px solid var(--sn-border);
+  background: var(--sn-surface-muted);
+  color: var(--sn-text-soft);
+  padding: 7px 14px;
+}
+
+.share-filter-btn.active {
+  border-color: rgba(0, 117, 222, 0.18);
+  background: var(--sn-blue-soft);
+  color: var(--sn-focus);
+}
+
+.share-comment-item {
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: #ffffff;
+  border: 1px solid var(--sn-border);
+  box-shadow: var(--sn-shadow-card);
+}
+
+.share-comment-item.resolved {
+  background: #fbfff9;
+  border-color: rgba(26, 174, 57, 0.18);
+}
+
+.share-comment-meta {
+  color: var(--sn-text-muted);
+}
+
+.share-comment-author {
+  color: var(--sn-text);
+}
+
+.share-comment-state-text,
+.share-comment-reply-count {
+  color: var(--sn-text-soft);
+}
+
+.share-comment-toggle-btn,
+.share-comment-reply-btn,
+.share-comment-delete-btn {
+  border-radius: var(--sn-radius-pill);
+  padding: 6px 12px;
+  border: 1px solid var(--sn-border);
+  background: #ffffff;
+}
+
+.share-comment-toggle-btn,
+.share-comment-reply-btn {
+  color: var(--sn-focus);
+}
+
+.share-comment-delete-btn {
+  color: var(--sn-red);
+}
+
+.share-comment-anchor-btn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 12px;
+  border-radius: var(--sn-radius-pill);
+  background: var(--sn-blue-soft);
+  color: var(--sn-focus);
+}
+
+.share-comment-anchor-btn.missing {
+  background: rgba(221, 91, 0, 0.1);
+  color: var(--sn-orange);
+}
+
+.share-comment-preview {
+  border: 1px solid var(--sn-border);
+  border-radius: 14px;
+  background: var(--sn-bg-soft);
+  color: var(--sn-text-soft);
+}
+
+.share-comment-content {
+  color: var(--sn-text);
+}
+
+.share-comment-replies {
+  padding-left: 14px;
+  border-left: 2px solid rgba(0, 0, 0, 0.06);
+}
+
+.share-comment-reply-item,
+.share-comment-reply-editor {
+  border-radius: 16px;
+  border: 1px solid var(--sn-border);
+  background: var(--sn-bg-soft);
+}
+
+@media (max-width: 1200px) {
+  .share-summary-grid,
+  .share-manage-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .share-comments-page {
+    padding: 16px;
+  }
+
+  .share-comments-title-block h1 {
+    font-size: clamp(28px, 9vw, 36px);
+  }
+}
 </style>

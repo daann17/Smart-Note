@@ -1238,4 +1238,220 @@ onMounted(async () => {
     width: 100%;
   }
 }
+
+/* Notion-inspired overrides */
+.admin-page {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 28px 24px 40px;
+  background: transparent;
+}
+
+.admin-header {
+  margin-bottom: 24px;
+}
+
+.header-main {
+  gap: 16px;
+}
+
+.back-btn {
+  margin-top: 4px;
+  border: 1px solid var(--sn-border);
+  border-radius: var(--sn-radius-pill);
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 10px;
+  border-radius: var(--sn-radius-pill);
+  background: var(--sn-blue-soft);
+  color: var(--sn-focus);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.admin-header h1 {
+  margin: 12px 0 10px;
+  font-size: clamp(32px, 4vw, 52px);
+  line-height: 1.04;
+  letter-spacing: -1.4px;
+  color: var(--sn-text);
+}
+
+.header-copy {
+  max-width: 780px;
+  color: var(--sn-text-soft);
+  font-size: 16px;
+}
+
+.summary-grid,
+.storage-card-grid,
+.maintenance-card-grid {
+  gap: 16px;
+}
+
+.summary-card,
+.storage-card,
+.maintenance-card {
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid var(--sn-border);
+  box-shadow: var(--sn-shadow-card);
+}
+
+.summary-card :deep(.ant-card-body),
+.storage-card :deep(.ant-card-body),
+.maintenance-card :deep(.ant-card-body) {
+  padding: 22px;
+}
+
+.summary-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+}
+
+.summary-body span,
+.maintenance-metric span {
+  color: var(--sn-text-soft);
+}
+
+.summary-body strong,
+.maintenance-metric strong {
+  color: var(--sn-text);
+  font-size: 30px;
+  letter-spacing: -0.8px;
+}
+
+.summary-body small,
+.maintenance-metric small {
+  color: var(--sn-text-muted);
+}
+
+.panel {
+  padding: 24px;
+  border-radius: 20px;
+  background: var(--sn-surface);
+  border: 1px solid var(--sn-border);
+  box-shadow: var(--sn-shadow-card);
+  backdrop-filter: none;
+}
+
+.panel-head h2 {
+  font-size: 24px;
+  line-height: 1.15;
+  letter-spacing: -0.4px;
+  color: var(--sn-text);
+}
+
+.panel-head p {
+  color: var(--sn-text-soft);
+}
+
+.result-count {
+  min-width: 0;
+  height: 32px;
+  padding: 0 12px;
+  background: var(--sn-blue-soft);
+  color: var(--sn-focus);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.maintenance-status-box {
+  padding: 18px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfaf8 100%);
+  border: 1px solid var(--sn-border);
+}
+
+.maintenance-status-label,
+.maintenance-status-message,
+.maintenance-footnote,
+.storage-footnote {
+  color: var(--sn-text-soft);
+}
+
+.maintenance-status-row strong,
+.storage-total {
+  color: var(--sn-text);
+}
+
+.maintenance-actions {
+  gap: 10px;
+}
+
+.toolbar {
+  gap: 10px;
+}
+
+.user-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(0, 117, 222, 0.12), rgba(242, 249, 255, 0.92));
+  color: var(--sn-focus);
+}
+
+.user-cell strong {
+  color: var(--sn-text);
+}
+
+.sub-line {
+  color: var(--sn-text-muted);
+}
+
+.asset-cell {
+  color: var(--sn-text-soft);
+}
+
+.share-cell {
+  gap: 12px;
+}
+
+.panel :deep(.ant-table-wrapper) {
+  overflow: hidden;
+  border: 1px solid var(--sn-border);
+  border-radius: 16px;
+  box-shadow: none;
+  background: var(--sn-surface);
+}
+
+.panel :deep(.ant-table-pagination) {
+  margin: 16px 16px 0 !important;
+}
+
+.panel :deep(.ant-progress-bg) {
+  background: var(--sn-blue);
+}
+
+.panel :deep(.ant-select-selector),
+.panel :deep(.ant-input),
+.panel :deep(.ant-input-affix-wrapper) {
+  background: #ffffff !important;
+}
+
+@media (max-width: 860px) {
+  .admin-page {
+    padding: 16px;
+  }
+
+  .admin-header,
+  .panel-head {
+    flex-direction: column;
+  }
+
+  .summary-grid,
+  .storage-card-grid,
+  .maintenance-card-grid {
+    grid-template-columns: 1fr;
+  }
+}
 </style>

@@ -1745,4 +1745,368 @@ onBeforeUnmount(() => {
     margin: 12px;
   }
 }
+
+/* Notion-inspired overrides */
+.graph-page {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 28px 24px 40px;
+  background: transparent;
+}
+
+.graph-header {
+  margin-bottom: 24px;
+}
+
+.header-main {
+  gap: 16px;
+}
+
+.back-btn {
+  margin-top: 4px;
+  border: 1px solid var(--sn-border);
+  border-radius: var(--sn-radius-pill);
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 10px;
+  border-radius: var(--sn-radius-pill);
+  background: var(--sn-blue-soft);
+  color: var(--sn-focus);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.graph-header h1 {
+  margin: 12px 0 10px;
+  font-size: clamp(32px, 4vw, 52px);
+  line-height: 1.04;
+  letter-spacing: -1.4px;
+  color: var(--sn-text);
+}
+
+.graph-header p {
+  max-width: 760px;
+  color: var(--sn-text-soft);
+  font-size: 16px;
+}
+
+.summary-grid {
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.summary-card {
+  align-items: flex-start;
+  padding: 22px 20px;
+  border-radius: var(--sn-radius-lg);
+  background: var(--sn-surface);
+  border: 1px solid var(--sn-border);
+  box-shadow: var(--sn-shadow-card);
+  backdrop-filter: none;
+}
+
+.summary-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+}
+
+.summary-value {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.9px;
+  color: var(--sn-text);
+}
+
+.summary-label {
+  color: var(--sn-text-soft);
+  font-size: 13px;
+}
+
+.control-bar {
+  gap: 14px;
+  padding: 16px 18px;
+  margin-bottom: 20px;
+  border-radius: var(--sn-radius-lg);
+  background: var(--sn-surface);
+  border: 1px solid var(--sn-border);
+  box-shadow: var(--sn-shadow-card);
+}
+
+.toggle-group {
+  flex-wrap: wrap;
+}
+
+.type-toggle {
+  border: 1px solid var(--sn-border);
+  background: var(--sn-surface-muted);
+  color: var(--sn-text-soft);
+  border-radius: var(--sn-radius-pill);
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.type-toggle:hover {
+  color: var(--sn-text);
+  border-color: var(--sn-border-strong);
+}
+
+.type-toggle.active {
+  border-color: rgba(0, 117, 222, 0.2);
+  background: var(--sn-blue-soft);
+  color: var(--sn-focus);
+  box-shadow: inset 0 0 0 1px rgba(0, 117, 222, 0.06);
+}
+
+.switch-wrap {
+  color: var(--sn-text-soft);
+  font-size: 13px;
+}
+
+.workspace {
+  grid-template-columns: minmax(0, 1.45fr) 360px;
+  gap: 20px;
+}
+
+.graph-stage,
+.detail-panel {
+  border-radius: 20px;
+  background: var(--sn-surface);
+  border: 1px solid var(--sn-border);
+  box-shadow: var(--sn-shadow-card);
+  backdrop-filter: none;
+}
+
+.graph-stage {
+  min-height: 760px;
+}
+
+.stage-head {
+  padding: 22px 22px 0;
+}
+
+.stage-head h2 {
+  margin-bottom: 8px;
+  font-size: 24px;
+  line-height: 1.15;
+  letter-spacing: -0.4px;
+  color: var(--sn-text);
+}
+
+.stage-head p,
+.legend-item {
+  color: var(--sn-text-soft);
+}
+
+.graph-host {
+  margin: 18px;
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at top left, rgba(0, 117, 222, 0.04), transparent 24%),
+    linear-gradient(180deg, #fbfaf8 0%, #f6f5f4 100%);
+  border: 1px solid var(--sn-border);
+}
+
+.state-panel {
+  background: rgba(246, 245, 244, 0.92);
+  color: var(--sn-text-soft);
+}
+
+.graph-node {
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.graph-node:hover .node-core {
+  filter: drop-shadow(0 18px 30px rgba(0, 0, 0, 0.14));
+}
+
+.node-core {
+  filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.12));
+}
+
+.graph-node.dragging .node-core {
+  filter: drop-shadow(0 20px 32px rgba(0, 0, 0, 0.18));
+}
+
+.node-ring {
+  stroke: rgba(0, 0, 0, 0.48);
+}
+
+.node-label {
+  fill: var(--sn-text);
+  stroke: rgba(255, 255, 255, 0.92);
+}
+
+.detail-panel {
+  position: sticky;
+  top: 24px;
+  align-self: start;
+  padding: 22px;
+}
+
+.detail-head h3 {
+  margin: 14px 0 10px;
+  font-size: 26px;
+  line-height: 1.12;
+  letter-spacing: -0.5px;
+  color: var(--sn-text);
+}
+
+.detail-head p {
+  color: var(--sn-text-soft);
+}
+
+.detail-grid {
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.detail-metric {
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--sn-bg-soft);
+  border: 1px solid var(--sn-border);
+}
+
+.detail-metric span {
+  color: var(--sn-text-soft);
+}
+
+.detail-metric strong {
+  color: var(--sn-text);
+  font-size: 24px;
+  letter-spacing: -0.6px;
+}
+
+.detail-meta {
+  padding: 16px;
+  border-radius: 16px;
+  background: var(--sn-bg-soft);
+  border: 1px solid var(--sn-border);
+}
+
+.meta-row {
+  color: var(--sn-text);
+}
+
+.meta-label {
+  color: var(--sn-text-muted);
+}
+
+.related-list {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.related-title {
+  color: var(--sn-text);
+}
+
+.related-total,
+.related-group-count {
+  background: var(--sn-blue-soft);
+  color: var(--sn-focus);
+}
+
+.relation-filter-bar {
+  gap: 10px;
+}
+
+.relation-filter {
+  border-radius: 14px;
+  border: 1px solid var(--sn-border);
+  background: var(--sn-surface-muted);
+  color: var(--sn-text-soft);
+}
+
+.relation-filter strong {
+  color: var(--sn-text);
+}
+
+.relation-filter:hover {
+  border-color: var(--sn-border-strong);
+  background: #ffffff;
+}
+
+.relation-filter.is-active {
+  border-color: rgba(0, 117, 222, 0.18);
+  background: linear-gradient(180deg, #ffffff 0%, var(--sn-blue-soft) 100%);
+  color: var(--sn-focus);
+  box-shadow: none;
+}
+
+.related-group {
+  border-top-color: rgba(0, 0, 0, 0.06);
+}
+
+.related-group-title,
+.related-name {
+  color: var(--sn-text);
+}
+
+.related-item {
+  border: 1px solid var(--sn-border);
+  border-radius: 14px;
+  background: var(--sn-bg-soft);
+}
+
+.related-item:hover {
+  border-color: rgba(0, 117, 222, 0.18);
+  background: #ffffff;
+}
+
+.related-meta,
+.empty-tip,
+.empty-detail p {
+  color: var(--sn-text-soft);
+}
+
+.empty-detail {
+  padding: 12px 0;
+}
+
+.empty-detail h3 {
+  color: var(--sn-text);
+}
+
+@media (max-width: 1200px) {
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-panel {
+    position: static;
+  }
+}
+
+@media (max-width: 860px) {
+  .graph-page {
+    padding: 16px;
+  }
+
+  .graph-header,
+  .control-bar,
+  .stage-head {
+    flex-direction: column;
+  }
+
+  .summary-grid,
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .graph-host {
+    margin: 14px;
+  }
+}
 </style>

@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm add:*)",
+      "Bash(mvn -DskipTests compile -q)",
+      "Bash(mvn -DskipTests compile)",
+      "Bash(node -e ':*)",
+      "Bash(node)",
+      "Bash(node:*)",
+      "Bash(pnpm vue-tsc:*)",
+      "Bash(npx vue-tsc:*)",
+      "Bash(cmd /c \"cd /d E:\\\\毕业设计\\\\SmartNote\\\\frontend && npx vue-tsc --noEmit 2>&1\")"
+    ]
+  }
+}

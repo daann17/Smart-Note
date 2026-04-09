@@ -81,119 +81,304 @@ const toggleMode = () => {
 </script>
 
 <template>
-  <div class="auth-container">
-    <div class="auth-card">
-      <div class="logo-area">
-        <img src="/home-logo.png" alt="Logo" class="logo" />
-        <h1 class="title">SmartNote</h1>
-        <p class="subtitle">记录想法、沉淀知识、协同创作</p>
-      </div>
+  <div class="auth-page">
+    <div class="auth-shell">
+      <section class="auth-hero">
+        <div class="hero-copy">
+          <span class="hero-badge">SmartNote Workspace</span>
+          <h1>把零散想法整理成温和、持续生长的知识库。</h1>
+          <p>
+            记录笔记、沉淀结构化知识、管理分享与协作评论，并把 AI 能力嵌入你的创作流程。
+          </p>
+        </div>
 
-      <a-tabs v-model:activeKey="activeTab" centered class="auth-tabs">
-        <a-tab-pane key="login" tab="登录" />
-        <a-tab-pane key="register" tab="注册" />
-      </a-tabs>
+        <div class="hero-grid">
+          <article class="hero-card">
+            <span class="hero-card-label">写作方式</span>
+            <strong>Markdown + 实时预览</strong>
+            <small>专注内容本身，同时保留结构、公式、流程图和历史版本。</small>
+          </article>
+          <article class="hero-card">
+            <span class="hero-card-label">知识组织</span>
+            <strong>笔记本、标签、知识图谱</strong>
+            <small>从碎片记录过渡到长期管理，找到主题之间真正的连接。</small>
+          </article>
+          <article class="hero-card">
+            <span class="hero-card-label">协作体验</span>
+            <strong>分享、评论、AI 助手</strong>
+            <small>支持公开分享、段落评论、协同编辑和上下文问答。</small>
+          </article>
+        </div>
+      </section>
 
-      <a-form
-        :model="formState"
-        name="auth_form"
-        class="auth-form"
-        @finish="handleFinish"
-        @finishFailed="handleFinishFailed"
-      >
-        <a-form-item
-          name="username"
-          :rules="[{ required: true, message: '请输入用户名' }]"
+      <section class="auth-panel">
+        <div class="panel-head">
+          <img src="/home-logo.png" alt="SmartNote" class="logo" />
+          <div>
+            <h2>欢迎回来</h2>
+            <p>{{ isLogin ? '继续你的整理与创作' : '创建账号，开始构建你的知识空间' }}</p>
+          </div>
+        </div>
+
+        <a-tabs v-model:activeKey="activeTab" centered class="auth-tabs">
+          <a-tab-pane key="login" tab="登录" />
+          <a-tab-pane key="register" tab="注册" />
+        </a-tabs>
+
+        <a-form
+          :model="formState"
+          name="auth_form"
+          class="auth-form"
+          layout="vertical"
+          @finish="handleFinish"
+          @finishFailed="handleFinishFailed"
         >
-          <a-input v-model:value="formState.username" placeholder="用户名" size="large">
-            <template #prefix><UserOutlined style="color: rgba(0, 0, 0, 0.25)" /></template>
-          </a-input>
-        </a-form-item>
+          <a-form-item
+            label="用户名"
+            name="username"
+            :rules="[{ required: true, message: '请输入用户名' }]"
+          >
+            <a-input v-model:value="formState.username" placeholder="请输入用户名" size="large">
+              <template #prefix><UserOutlined /></template>
+            </a-input>
+          </a-form-item>
 
-        <a-form-item
-          v-if="!isLogin"
-          name="email"
-          :rules="[{ required: true, type: 'email', message: '请输入有效的邮箱地址' }]"
-        >
-          <a-input v-model:value="formState.email" placeholder="邮箱" size="large">
-            <template #prefix><MailOutlined style="color: rgba(0, 0, 0, 0.25)" /></template>
-          </a-input>
-        </a-form-item>
+          <a-form-item
+            v-if="!isLogin"
+            label="邮箱"
+            name="email"
+            :rules="[{ required: true, type: 'email', message: '请输入有效邮箱地址' }]"
+          >
+            <a-input v-model:value="formState.email" placeholder="请输入邮箱" size="large">
+              <template #prefix><MailOutlined /></template>
+            </a-input>
+          </a-form-item>
 
-        <a-form-item
-          name="password"
-          :rules="[{ required: true, message: '请输入密码' }]"
-        >
-          <a-input-password v-model:value="formState.password" placeholder="密码" size="large">
-            <template #prefix><LockOutlined style="color: rgba(0, 0, 0, 0.25)" /></template>
-          </a-input-password>
-        </a-form-item>
+          <a-form-item
+            label="密码"
+            name="password"
+            :rules="[{ required: true, message: '请输入密码' }]"
+          >
+            <a-input-password v-model:value="formState.password" placeholder="请输入密码" size="large">
+              <template #prefix><LockOutlined /></template>
+            </a-input-password>
+          </a-form-item>
 
-        <a-form-item>
-          <a-button type="primary" html-type="submit" block size="large" :loading="loading">
-            {{ isLogin ? '登录' : '注册' }}
-          </a-button>
-        </a-form-item>
-      </a-form>
+          <a-form-item class="submit-row">
+            <a-button type="primary" html-type="submit" block size="large" :loading="loading">
+              {{ isLogin ? '进入工作台' : '创建账号' }}
+            </a-button>
+          </a-form-item>
+        </a-form>
 
-      <div class="auth-footer">
-        <a v-if="isLogin" @click.prevent="toggleMode">没有账号？立即注册</a>
-        <a v-else @click.prevent="toggleMode">已有账号？立即登录</a>
-      </div>
+        <div class="auth-footer">
+          <span>{{ isLogin ? '还没有账号？' : '已经有账号？' }}</span>
+          <a @click.prevent="toggleMode">{{ isLogin ? '立即注册' : '直接登录' }}</a>
+        </div>
+      </section>
     </div>
   </div>
 </template>
 
 <style scoped>
-.auth-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+.auth-page {
   min-height: 100vh;
-  background-color: #f0f2f5;
-  background-image: url('https://gw.alipayobjects.com/zos/rmsportal/TVYTbAXWheQpRcWDaDMu.svg');
-  background-repeat: no-repeat;
-  background-position: center 110px;
-  background-size: 100%;
+  padding: 32px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.auth-card {
-  width: 400px;
+.auth-shell {
+  width: min(1200px, 100%);
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(380px, 440px);
+  gap: 28px;
+  align-items: stretch;
+}
+
+.auth-hero,
+.auth-panel {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: var(--sn-shadow-card);
+}
+
+.auth-hero {
+  padding: 40px;
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at top right, rgba(0, 117, 222, 0.08), transparent 24%),
+    linear-gradient(180deg, #ffffff 0%, #fbfaf8 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.hero-copy {
+  max-width: 640px;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 12px;
+  border-radius: 9999px;
+  background: #f2f9ff;
+  color: #097fe8;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.auth-hero h1 {
+  margin: 18px 0 16px;
+  max-width: 760px;
+  font-size: clamp(40px, 5vw, 64px);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -2px;
+  color: rgba(0, 0, 0, 0.95);
+}
+
+.auth-hero p {
+  margin: 0;
+  max-width: 620px;
+  color: #615d59;
+  font-size: 18px;
+  line-height: 1.7;
+}
+
+.hero-grid {
+  margin-top: 40px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.hero-card {
+  padding: 18px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.hero-card-label {
+  color: #a39e98;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hero-card strong {
+  display: block;
+  margin-top: 12px;
+  color: rgba(0, 0, 0, 0.95);
+  font-size: 22px;
+  line-height: 1.3;
+  letter-spacing: -0.4px;
+}
+
+.hero-card small {
+  display: block;
+  margin-top: 10px;
+  color: #615d59;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.auth-panel {
   padding: 32px;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  border-radius: 24px;
+  display: flex;
+  flex-direction: column;
 }
 
-.logo-area {
-  text-align: center;
-  margin-bottom: 24px;
+.panel-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
 }
 
 .logo {
-  height: 160px;
-  margin-bottom: 16px;
+  width: 76px;
+  height: 76px;
+  object-fit: contain;
+  border-radius: 18px;
+  background: #f6f5f4;
+  padding: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-.title {
-  font-size: 24px;
-  font-weight: 600;
-  color: rgba(0, 0, 0, 0.85);
-  margin-bottom: 8px;
+.panel-head h2 {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.8px;
+  color: rgba(0, 0, 0, 0.95);
 }
 
-.subtitle {
-  color: rgba(0, 0, 0, 0.45);
-  font-size: 14px;
-  margin-bottom: 24px;
+.panel-head p {
+  margin: 8px 0 0;
+  color: #615d59;
+  font-size: 15px;
 }
 
 .auth-tabs {
-  margin-bottom: 24px;
+  margin-bottom: 12px;
+}
+
+.auth-form {
+  margin-top: 8px;
+}
+
+.submit-row {
+  margin-top: 6px;
+  margin-bottom: 0;
 }
 
 .auth-footer {
-  text-align: center;
-  margin-top: 16px;
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #615d59;
+  font-size: 14px;
+}
+
+.auth-footer a {
+  font-weight: 600;
+}
+
+@media (max-width: 1080px) {
+  .auth-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .auth-page {
+    padding: 16px;
+  }
+
+  .auth-hero,
+  .auth-panel {
+    padding: 24px 20px;
+  }
+
+  .panel-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 </style>

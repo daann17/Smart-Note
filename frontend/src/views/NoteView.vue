@@ -765,7 +765,7 @@ const handleDropOnFolder = async (folderId: number | null) => {
 
     <div v-if="noteStore.currentNote" class="editor-area">
       <div class="editor-header">
-        <div class="header-top" style="width: 100%; display: flex; align-items: center; margin-bottom: 10px;">
+        <div class="header-top">
           <a-input
             v-model:value="noteStore.currentNote.title"
             class="title-input"
@@ -777,30 +777,30 @@ const handleDropOnFolder = async (folderId: number | null) => {
           </span>
           <a-button
             type="dashed"
+            class="editor-action-btn"
             @click="handleGenerateSummary"
-            style="margin-right: 8px; color: #722ed1; border-color: #722ed1;"
             :loading="isGeneratingSummary"
           >
             <template #icon><RobotOutlined /></template>
             智能摘要
           </a-button>
-          <a-button type="default" @click="openAIAssistant" style="margin-right: 8px;">
+          <a-button type="default" class="editor-action-btn" @click="openAIAssistant">
             <template #icon><RobotOutlined /></template>
             AI 问答
           </a-button>
-          <a-button type="default" @click="handleOpenHistory" style="margin-right: 8px;">
+          <a-button type="default" class="editor-action-btn" @click="handleOpenHistory">
             <template #icon><HistoryOutlined /></template>
             历史
           </a-button>
-          <a-button type="default" @click="handleOpenShareModal" style="margin-right: 8px;">
+          <a-button type="default" class="editor-action-btn" @click="handleOpenShareModal">
             <template #icon><ShareAltOutlined /></template>
             分享
           </a-button>
-          <a-button type="default" @click="openCommentArea" style="margin-right: 8px;">
+          <a-button type="default" class="editor-action-btn" @click="openCommentArea">
             <template #icon><MessageOutlined /></template>
             评论区
           </a-button>
-          <a-button type="primary" @click="() => handleSave(false)" style="margin-right: 8px;">
+          <a-button type="primary" class="editor-action-btn" @click="() => handleSave(false)">
             <template #icon><SaveOutlined /></template>
             保存
           </a-button>
@@ -833,7 +833,7 @@ const handleDropOnFolder = async (folderId: number | null) => {
             </a-button>
           </a-dropdown>
         </div>
-        <div class="header-tags" style="width: 100%; padding: 0 12px; display: flex; gap: 8px;">
+        <div class="header-tags">
           <a-select
             v-model:value="selectedTags"
             mode="tags"
@@ -843,13 +843,13 @@ const handleDropOnFolder = async (folderId: number | null) => {
           >
             <template #suffixIcon><TagOutlined /></template>
           </a-select>
-          <a-button type="dashed" @click="handleSuggestTags" :loading="suggestingTags" title="智能推荐标签">
+          <a-button type="dashed" class="tag-suggest-btn" @click="handleSuggestTags" :loading="suggestingTags" title="智能推荐标签">
             <template #icon><RobotOutlined /></template>
             智能推荐
           </a-button>
         </div>
 
-        <div v-if="noteStore.currentNote.summary" class="summary-area" style="margin: 12px 12px 0 12px;">
+        <div v-if="noteStore.currentNote.summary" class="summary-area">
           <a-alert
             message="AI 智能摘要"
             :description="noteStore.currentNote.summary"
@@ -999,95 +999,103 @@ const handleDropOnFolder = async (folderId: number | null) => {
 <style scoped>
 .note-editor-layout {
   display: flex;
-  height: 100vh;
+  min-height: 100vh;
   overflow: hidden;
-  background: #fff;
+  background: linear-gradient(180deg, #fbfaf8 0%, #f6f5f4 100%);
 }
 
 .note-list {
-  width: 260px;
-  border-right: 1px solid #f0f0f0;
+  width: 288px;
+  padding: 18px 12px;
+  border-right: 1px solid rgba(0, 0, 0, 0.08);
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 
 .list-header {
-  padding: 12px 16px;
+  padding: 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #f0f0f0;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.88);
   flex-shrink: 0;
+  box-shadow: var(--sn-shadow-card);
 }
 
-/* 笔记列表滚动区 */
 .list-content {
   flex: 1;
   overflow-y: auto;
-  padding: 6px 0;
+  margin-top: 14px;
+  padding: 10px 8px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.82);
 }
 
 .note-item {
   cursor: pointer;
-  padding: 8px 16px;
-  transition: background-color 0.15s;
+  padding: 10px 14px;
+  transition: background-color 0.15s, transform 0.15s ease, border-color 0.15s ease;
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  border-radius: 0;
+  gap: 4px;
+  border-radius: 14px;
+  border: 1px solid transparent;
   user-select: none;
 }
 
 .note-item:hover {
-  background-color: #f5f5f5;
+  background-color: rgba(0, 0, 0, 0.04);
+  transform: translateY(-1px);
 }
 
 .note-item.active {
-  background-color: #e6f7ff;
-  border-right: 2px solid #1890ff;
+  background-color: #f2f9ff;
+  border-color: rgba(0, 117, 222, 0.16);
 }
 
 .note-title {
-  font-weight: 500;
-  color: #333;
-  font-size: 13px;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.95);
+  font-size: 14px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .note-date {
-  font-size: 11px;
-  color: #aaa;
+  font-size: 12px;
+  color: #615d59;
 }
-
-/* ── 文件夹样式 ─────────────────────────────────────────────────────────── */
 
 .folder-group {
-  margin-bottom: 2px;
+  margin-bottom: 4px;
 }
 
-/* 文件夹标题行 */
 .folder-header {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 7px 12px;
+  gap: 8px;
+  padding: 9px 12px;
   cursor: pointer;
-  border-radius: 6px;
-  margin: 0 4px;
-  transition: background-color 0.15s;
+  border-radius: 14px;
+  margin: 0 2px;
+  transition: background-color 0.15s, border-color 0.15s ease;
   position: relative;
+  border: 1px solid transparent;
 }
 
 .folder-header:hover {
-  background-color: #f5f5f5;
+  background-color: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.06);
 }
 
 .folder-icon {
   font-size: 14px;
-  color: #faad14;
+  color: #dd5b00;
   flex-shrink: 0;
 }
 
@@ -1095,7 +1103,7 @@ const handleDropOnFolder = async (folderId: number | null) => {
   flex: 1;
   font-size: 13px;
   font-weight: 600;
-  color: #333;
+  color: rgba(0, 0, 0, 0.95);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1103,18 +1111,17 @@ const handleDropOnFolder = async (folderId: number | null) => {
 
 .folder-count {
   font-size: 11px;
-  color: #bbb;
-  background: #f0f0f0;
+  color: #615d59;
+  background: rgba(0, 0, 0, 0.05);
   border-radius: 999px;
-  padding: 1px 6px;
+  padding: 2px 8px;
   flex-shrink: 0;
 }
 
-/* 文件夹操作按钮：默认隐藏，hover 时显示 */
 .folder-actions {
   display: none;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
 }
 
 .folder-header:hover .folder-actions {
@@ -1126,14 +1133,13 @@ const handleDropOnFolder = async (folderId: number | null) => {
   font-size: 13px;
 }
 
-/* 文件夹内的笔记列表：缩进显示 */
 .folder-notes {
-  padding-left: 18px;
+  padding-left: 16px;
 }
 
 .folder-empty {
-  font-size: 11px;
-  color: #ccc;
+  font-size: 12px;
+  color: #a39e98;
   padding: 6px 16px;
   font-style: italic;
 }
@@ -1142,35 +1148,74 @@ const handleDropOnFolder = async (folderId: number | null) => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  height: 100%;
+  min-height: 100vh;
   min-width: 0;
   overflow: hidden;
+  padding: 18px 18px 18px 16px;
 }
 
 .editor-header {
-  padding: 16px 24px;
-  border-bottom: 1px solid #f0f0f0;
+  padding: 20px 24px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 24px 24px 0 0;
+  background:
+    radial-gradient(circle at top right, rgba(0, 117, 222, 0.08), transparent 26%),
+    linear-gradient(180deg, #ffffff 0%, #fbfaf8 100%);
   display: flex;
   flex-direction: column;
+  box-shadow: var(--sn-shadow-card);
+}
+
+.header-top {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.editor-action-btn {
+  margin-right: 0 !important;
 }
 
 .title-input {
-  font-size: 24px;
-  font-weight: bold;
+  font-size: 28px;
+  font-weight: 700;
   flex: 1;
 }
 
 .save-status {
   font-size: 12px;
-  color: #999;
+  color: #615d59;
   margin-right: 16px;
   user-select: none;
+}
+
+.header-tags {
+  width: 100%;
+  padding: 0 12px;
+  display: flex;
+  gap: 8px;
+}
+
+.tag-suggest-btn {
+  white-space: nowrap;
+}
+
+.summary-area {
+  margin: 12px 12px 0;
 }
 
 .editor-content {
   flex: 1;
   overflow: hidden;
   padding: 0;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-top: none;
+  border-radius: 0 0 24px 24px;
+  background: #ffffff;
+  box-shadow: var(--sn-shadow-card);
 }
 
 .empty-state {
@@ -1178,18 +1223,65 @@ const handleDropOnFolder = async (folderId: number | null) => {
   display: flex;
   align-items: center;
   justify-content: center;
+  margin: 18px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: var(--sn-shadow-card);
 }
+
 .history-preview-content {
   max-height: 60vh;
   overflow-y: auto;
   padding: 24px;
-  background-color: #f9f9f9;
-  border-radius: 4px;
+  background-color: #fbfaf8;
+  border-radius: 16px;
 }
 
-/* 保证 Markdown 内容的图片等不会超出边界 */
 .markdown-body img {
   max-width: 100%;
+}
+
+@media (max-width: 1100px) {
+  .note-list {
+    width: 260px;
+  }
+
+  .editor-area {
+    padding-left: 12px;
+  }
+
+  .header-tags {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 860px) {
+  .note-editor-layout {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .note-list {
+    width: 100%;
+    max-height: 42vh;
+    padding-bottom: 0;
+    border-right: none;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  }
+
+  .editor-area {
+    min-height: 0;
+    padding: 16px;
+  }
+
+  .editor-header {
+    border-radius: 20px 20px 0 0;
+  }
+
+  .editor-content {
+    border-radius: 0 0 20px 20px;
+  }
 }
 </style>
 
