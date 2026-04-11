@@ -34,4 +34,6 @@ public interface NoteFolderRepository extends JpaRepository<NoteFolder, Long> {
      */
     @Query("SELECT COALESCE(MAX(f.sortOrder), -1) FROM NoteFolder f WHERE f.notebook.id = :notebookId")
     int findMaxSortOrderByNotebookId(@Param("notebookId") Long notebookId);
+
+    NoteFolder findByParentFolderAndNameAndNotebook(NoteFolder parentFolder, String name, com.smartnote.entity.Notebook notebook);
 }

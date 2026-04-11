@@ -14,6 +14,7 @@ import {
   SettingOutlined,
   ShareAltOutlined,
   TeamOutlined,
+  ImportOutlined,
 } from '@ant-design/icons-vue';
 import { message, Modal } from 'ant-design-vue';
 import { useRouter } from 'vue-router';
@@ -26,6 +27,7 @@ import { useTagStore } from '../stores/tag';
 import { clearSession, storeSession } from '../utils/session';
 import DashboardView from './DashboardView.vue';
 import AIAssistantDrawer from '../components/AIAssistantDrawer.vue';
+import ImportModal from '../components/ImportModal.vue';
 
 type UserProfile = {
   username: string;
@@ -98,6 +100,7 @@ const createForm = reactive({
 
 const recentNotes = ref<Note[]>([]);
 const aiDrawerVisible = ref(false);
+const importModalVisible = ref(false);
 
 const profileModalVisible = ref(false);
 const profileLoading = ref(false);
@@ -444,6 +447,10 @@ const handleLogout = () => {
   router.push('/');
 };
 
+const handleImport = () => {
+  importModalVisible.value = true;
+};
+
 const openNote = (note: Note) => {
   isSearching.value = false;
   router.push(`/notebook/${note.notebook?.id}?noteId=${note.id}`);
@@ -682,6 +689,11 @@ onUnmounted(() => {
             AI 问答
           </a-button>
 
+          <a-button type="default" shape="round" @click="handleImport">
+            <template #icon><ImportOutlined /></template>
+            导入
+          </a-button>
+
           <a-button type="primary" shape="round" @click="showCreateModal">
             <template #icon><PlusOutlined /></template>
             新建笔记本
@@ -807,6 +819,7 @@ onUnmounted(() => {
     </a-modal>
 
     <AIAssistantDrawer v-model:visible="aiDrawerVisible" />
+    <ImportModal v-model:visible="importModalVisible" />
   </a-layout>
 </template>
 
