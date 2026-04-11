@@ -1,6 +1,7 @@
 <template>
   <a-modal
-    v-model:open="visible"
+    :open="visible"
+    @update:open="(value) => emit('update:visible', value)"
     title="导入文档"
     width="600px"
     @cancel="handleCancel"
