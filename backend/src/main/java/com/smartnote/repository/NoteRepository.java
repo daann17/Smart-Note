@@ -78,6 +78,4 @@ public interface NoteRepository extends JpaRepository<Note, Long>, JpaSpecificat
         GROUP BY n.notebook.user.id
         """)
     List<UserOwnedCountProjection> sumEstimatedStorageByUserIdGroupedExcludingStatus(@Param("status") String status);
-
-    boolean existsByTitleAndNotebookAndUser(String title, com.smartnote.entity.Notebook notebook, com.smartnote.entity.User user);
 }

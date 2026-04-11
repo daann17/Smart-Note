@@ -11,11 +11,9 @@ import {
   ArrowLeftOutlined, DeleteOutlined, ShareAltOutlined,
   DownloadOutlined, MessageOutlined, FolderOutlined,
   FolderOpenOutlined, EditOutlined, FolderAddOutlined,
-  ImportOutlined,
 } from '@ant-design/icons-vue';
 import MarkdownEditor from '../components/MarkdownEditor.vue';
 import AIAssistantDrawer from '../components/AIAssistantDrawer.vue';
-import ImportModal from '../components/ImportModal.vue';
 import { message, Modal } from 'ant-design-vue';
 
 const route = useRoute();
@@ -602,15 +600,8 @@ const handleDeleteFolder = (folderId: number, folderName: string) => {
 // 拖拽笔记到文件夹：HTML5 拖拽 API
 const draggingNoteId = ref<number | null>(null);
 
-// 导入模态框
-const importModalVisible = ref(false);
-
 const handleNoteDragStart = (noteId: number) => {
   draggingNoteId.value = noteId;
-};
-
-const handleImport = () => {
-  importModalVisible.value = true;
 };
 
 const handleDropOnFolder = async (folderId: number | null) => {
@@ -652,12 +643,6 @@ const handleDropOnFolder = async (folderId: number | null) => {
           <h3 style="margin: 0;">笔记列表</h3>
         </div>
         <div style="display: flex; gap: 6px;">
-          <!-- 导入 -->
-          <a-tooltip title="导入文档">
-            <a-button type="text" shape="circle" size="small" @click="handleImport">
-              <template #icon><ImportOutlined /></template>
-            </a-button>
-          </a-tooltip>
           <!-- 新建文件夹 -->
           <a-tooltip title="新建文件夹">
             <a-button type="text" shape="circle" size="small" @click="handleOpenNewFolderModal">
@@ -1007,10 +992,6 @@ const handleDropOnFolder = async (folderId: number | null) => {
       v-model:visible="aiDrawerVisible"
       :current-note-id="noteStore.currentNote?.id ?? null"
       :current-note-title="noteStore.currentNote?.title ?? ''"
-    />
-    <ImportModal 
-      v-model:visible="importModalVisible" 
-      :default-notebook-id="notebookId.value" 
     />
   </div>
 </template>
