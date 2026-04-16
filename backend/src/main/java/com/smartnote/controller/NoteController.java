@@ -5,6 +5,7 @@ import com.smartnote.entity.Note;
 import com.smartnote.entity.NoteHistory;
 import com.smartnote.service.AIService;
 import com.smartnote.service.NoteExportService;
+import com.smartnote.service.NoteImportService;
 import com.smartnote.service.NoteService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -40,6 +42,9 @@ public class NoteController {
 
     @Autowired
     private NoteExportService noteExportService;
+
+    @Autowired
+    private NoteImportService noteImportService;
 
     @GetMapping("/search")
     public ResponseEntity<?> searchNotes(
@@ -154,6 +159,24 @@ public class NoteController {
     @GetMapping("/recent")
     public ResponseEntity<List<Note>> getRecentNotes(Authentication authentication) {
         return ResponseEntity.ok(noteService.getRecentNotes(authentication.getName()));
+    }
+
+    @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> importNote(
+            @RequestParam Long notebookId,
+            @RequestParam(required = false) Long folderId,
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(required = false) String format
+    ) {
+        try {
+            NoteRequest importRequest = noteImportService.buildImportRequest(notebookId, file, format);
+            importRequest.setFolderId(folderId);
+            return ResponseEntity.ok(noteService.createNote(importRequest));
+        } catch (IllegalArgumentException exception) {
+            return ResponseEntity.badRequest().body(Map.of("message", exception.getMessage()));
+        } catch (RuntimeException exception) {
+            return ResponseEntity.badRequest().body(Map.of("message", exception.getMessage()));
+        }
     }
 
     @GetMapping("/{id}/export/markdown")

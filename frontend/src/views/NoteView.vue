@@ -1,7 +1,7 @@
 ﻿<script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useNoteStore, type NoteExportFormat } from '../stores/note';
+import { useNoteStore, type NoteExportFormat, type NoteImportFormat } from '../stores/note';
 import { useNotebookStore } from '../stores/notebook';
 import { useTagStore } from '../stores/tag';
 import { useFolderStore } from '../stores/folder';
@@ -9,7 +9,7 @@ import {
   PlusOutlined, SaveOutlined, TagOutlined, HistoryOutlined,
   RobotOutlined, MoreOutlined, CopyOutlined, DragOutlined,
   ArrowLeftOutlined, DeleteOutlined, ShareAltOutlined,
-  DownloadOutlined, MessageOutlined, FolderOutlined,
+  DownloadOutlined, UploadOutlined, MessageOutlined, FolderOutlined,
   FolderOpenOutlined, EditOutlined, FolderAddOutlined, DownOutlined,
 } from '@ant-design/icons-vue';
 import MarkdownEditor from '../components/MarkdownEditor.vue';
@@ -39,6 +39,43 @@ const exportFormatLabels: Record<NoteExportFormat, string> = {
   pdf: 'PDF',
   word: 'Word',
 };
+
+const importFormatLabels: Record<NoteImportFormat, string> = {
+  text: 'TXT',
+  markdown: 'Markdown',
+  html: 'HTML',
+  word: 'Word',
+  excel: 'Excel',
+};
+
+const importAccepts: Record<NoteImportFormat, string> = {
+  text: '.txt,text/plain',
+  markdown: '.md,.markdown,text/markdown',
+  html: '.html,.htm,text/html',
+  word: '.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  excel: '.xls,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+};
+
+const importExtensions: Record<NoteImportFormat, string[]> = {
+  text: ['.txt'],
+  markdown: ['.md', '.markdown'],
+  html: ['.html', '.htm'],
+  word: ['.doc', '.docx'],
+  excel: ['.xls', '.xlsx'],
+};
+
+const importMimeTypes: Record<NoteImportFormat, string[]> = {
+  text: ['text/plain'],
+  markdown: ['text/markdown'],
+  html: ['text/html'],
+  word: ['application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+  excel: ['application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
+};
+
+const importFileInput = ref<HTMLInputElement | null>(null);
+const importFolderInput = ref<HTMLInputElement | null>(null);
+const pendingImportFormat = ref<NoteImportFormat>('markdown');
+const folderImportAccept = Object.values(importExtensions).flat().join(',');
 
 const normalizeRouteId = (value: unknown) => {
   const rawValue = Array.isArray(value) ? value[0] : value;
@@ -455,6 +492,215 @@ const openCommentArea = () => {
   });
 };
 
+const isAcceptedImportFile = (file: File, format: NoteImportFormat) => {
+  const fileName = file.name.toLowerCase();
+  if (importExtensions[format].some((extension) => fileName.endsWith(extension))) {
+    return true;
+  }
+
+  const fileType = file.type.toLowerCase();
+  return fileType !== '' && importMimeTypes[format].includes(fileType);
+};
+
+const detectImportFormat = (file: File): NoteImportFormat | null => {
+  const fileName = file.name.toLowerCase();
+  const matchedByExtension = (Object.keys(importExtensions) as NoteImportFormat[])
+    .find((format) => importExtensions[format].some((extension) => fileName.endsWith(extension)));
+
+  if (matchedByExtension) {
+    return matchedByExtension;
+  }
+
+  const fileType = file.type.toLowerCase();
+  if (!fileType) {
+    return null;
+  }
+
+  return (Object.keys(importMimeTypes) as NoteImportFormat[])
+    .find((format) => importMimeTypes[format].includes(fileType)) ?? null;
+};
+
+const getFolderDisplayName = (folder: { id: number; name: string; parentFolder?: { id: number; name: string } | null }) => {
+  const names: string[] = [];
+  const visited = new Set<number>();
+  let currentFolder: { id: number; name: string; parentFolder?: { id: number; name: string } | null } | undefined | null = folder;
+
+  while (currentFolder && !visited.has(currentFolder.id)) {
+    visited.add(currentFolder.id);
+    names.unshift(currentFolder.name);
+    const parentId: number | null = currentFolder.parentFolder?.id ?? null;
+    currentFolder = parentId != null
+      ? folderStore.folders.find((item) => item.id === parentId) ?? currentFolder.parentFolder ?? null
+      : null;
+  }
+
+  return names.join(' / ');
+};
+
+const findFolderByNameAndParent = (name: string, parentFolderId: number | null) => {
+  const normalizedName = name.trim().toLowerCase();
+  return folderStore.folders.find((folder) => (
+    folder.name.trim().toLowerCase() === normalizedName
+    && (folder.parentFolder?.id ?? null) === parentFolderId
+  )) ?? null;
+};
+
+const ensureFolderPath = async (segments: string[]) => {
+  if (!notebookId.value) {
+    return null;
+  }
+
+  let parentFolderId: number | null = null;
+  for (const rawSegment of segments) {
+    const segment = rawSegment.trim();
+    if (!segment) {
+      continue;
+    }
+
+    let folder = findFolderByNameAndParent(segment, parentFolderId);
+    if (!folder) {
+      folder = await folderStore.createFolder(notebookId.value, segment, parentFolderId ?? undefined);
+    }
+    parentFolderId = folder.id;
+  }
+
+  return parentFolderId;
+};
+
+const getRelativeFolderSegments = (file: File) => {
+  const relativePath = file.webkitRelativePath || file.name;
+  return relativePath
+    .replace(/\\/g, '/')
+    .split('/')
+    .slice(0, -1)
+    .map((segment) => segment.trim())
+    .filter(Boolean);
+};
+
+const openImportPicker = (format: NoteImportFormat) => {
+  if (!notebookId.value) {
+    message.warning('当前未选中笔记本，暂时无法导入');
+    return;
+  }
+
+  pendingImportFormat.value = format;
+  if (importFileInput.value) {
+    importFileInput.value.value = '';
+    importFileInput.value.accept = importAccepts[format];
+    importFileInput.value.click();
+  }
+};
+
+const openImportFolderPicker = () => {
+  if (!notebookId.value) {
+    message.warning('当前未选中笔记本，暂时无法导入');
+    return;
+  }
+
+  if (importFolderInput.value) {
+    importFolderInput.value.value = '';
+    importFolderInput.value.click();
+  }
+};
+
+const handleImportFileChange = async (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file || !notebookId.value) {
+    return;
+  }
+
+  const format = pendingImportFormat.value;
+  const formatLabel = importFormatLabels[format];
+  if (!isAcceptedImportFile(file, format)) {
+    message.warning(`请选择 ${formatLabel} 格式的文件`);
+    input.value = '';
+    return;
+  }
+
+  const hide = message.loading(`正在导入 ${formatLabel}...`, 0);
+  try {
+    const importedNote = await noteStore.importNote(notebookId.value, file, format);
+    await noteStore.fetchNotes(notebookId.value);
+    await handleSelectNote(importedNote.id);
+    message.success(`${formatLabel} 导入成功`);
+  } catch (error: any) {
+    message.error(error.response?.data?.message || `${formatLabel} 导入失败，请重试`);
+  } finally {
+    hide();
+    input.value = '';
+  }
+};
+
+const handleImportFolderChange = async (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  const files = Array.from(input.files ?? []);
+  if (!notebookId.value || files.length === 0) {
+    return;
+  }
+
+  await folderStore.fetchFolders(notebookId.value);
+
+  const supportedFiles = files
+    .map((file) => ({ file, format: detectImportFormat(file) }))
+    .filter((entry): entry is { file: File; format: NoteImportFormat } => entry.format != null);
+
+  const skippedUnsupported = files.length - supportedFiles.length;
+  if (supportedFiles.length === 0) {
+    message.warning('所选文件夹中没有可导入的 TXT、Markdown、HTML、Word 或 Excel 文件');
+    input.value = '';
+    return;
+  }
+
+  const hide = message.loading(`正在导入文件夹，共 ${supportedFiles.length} 个文件...`, 0);
+  let importedCount = 0;
+  let failedCount = 0;
+  let lastImportedNoteId: number | null = null;
+
+  try {
+    for (const entry of supportedFiles) {
+      try {
+        const folderId = await ensureFolderPath(getRelativeFolderSegments(entry.file));
+        const importedNote = await noteStore.importNote(
+          notebookId.value,
+          entry.file,
+          entry.format,
+          folderId,
+          false,
+        );
+        importedCount += 1;
+        lastImportedNoteId = importedNote.id;
+      } catch (error) {
+        failedCount += 1;
+      }
+    }
+
+    await Promise.all([
+      noteStore.fetchNotes(notebookId.value),
+      folderStore.fetchFolders(notebookId.value),
+    ]);
+
+    if (lastImportedNoteId != null) {
+      await handleSelectNote(lastImportedNoteId);
+    }
+
+    const summary = [
+      importedCount > 0 ? `成功 ${importedCount} 个` : '',
+      failedCount > 0 ? `失败 ${failedCount} 个` : '',
+      skippedUnsupported > 0 ? `跳过 ${skippedUnsupported} 个不支持文件` : '',
+    ].filter(Boolean).join('，');
+
+    if (importedCount > 0) {
+      message.success(`文件夹导入完成：${summary}`);
+    } else {
+      message.warning(`文件夹导入未完成：${summary || '没有成功导入的文件'}`);
+    }
+  } finally {
+    hide();
+    input.value = '';
+  }
+};
+
 const handleExport = async (format: NoteExportFormat) => {
   if (!noteStore.currentNote) return;
 
@@ -491,10 +737,13 @@ const handleExport = async (format: NoteExportFormat) => {
 // 返回：{ root: Note[], folders: { folder, notes }[] }
 const groupedNotes = computed(() => {
   const rootNotes = noteStore.notes.filter((n) => !n.folder && !n.folderId);
-  const folderGroups = folderStore.folders.map((folder) => ({
-    folder,
-    notes: noteStore.notes.filter((n) => n.folder?.id === folder.id || n.folderId === folder.id),
-  }));
+  const folderGroups = folderStore.folders
+    .map((folder) => ({
+      folder,
+      displayName: getFolderDisplayName(folder),
+      notes: noteStore.notes.filter((n) => n.folder?.id === folder.id || n.folderId === folder.id),
+    }))
+    .sort((left, right) => left.displayName.localeCompare(right.displayName, 'zh-CN'));
   return { rootNotes, folderGroups };
 });
 
@@ -637,12 +886,60 @@ const handleDropOnFolder = async (folderId: number | null) => {
               <template #icon><FolderAddOutlined /></template>
             </a-button>
           </a-tooltip>
+          <!-- 导入文件 -->
+          <a-dropdown :trigger="['click']">
+            <template #overlay>
+              <a-menu>
+                <a-menu-item key="import-text" @click="openImportPicker('text')">
+                  <UploadOutlined /> 导入 TXT
+                </a-menu-item>
+                <a-menu-item key="import-markdown" @click="openImportPicker('markdown')">
+                  <UploadOutlined /> 导入 Markdown
+                </a-menu-item>
+                <a-menu-item key="import-html" @click="openImportPicker('html')">
+                  <UploadOutlined /> 导入 HTML
+                </a-menu-item>
+                <a-menu-item key="import-word" @click="openImportPicker('word')">
+                  <UploadOutlined /> 导入 Word
+                </a-menu-item>
+                <a-menu-item key="import-excel" @click="openImportPicker('excel')">
+                  <UploadOutlined /> 导入 Excel
+                </a-menu-item>
+                <a-menu-divider />
+                <a-menu-item key="import-folder" @click="openImportFolderPicker">
+                  <FolderOpenOutlined /> 导入文件夹
+                </a-menu-item>
+              </a-menu>
+            </template>
+            <a-tooltip title="导入文件或文件夹">
+              <a-button type="text" shape="circle" size="small">
+                <template #icon><UploadOutlined /></template>
+              </a-button>
+            </a-tooltip>
+          </a-dropdown>
           <!-- 新建笔记 -->
           <a-button type="primary" shape="circle" size="small" @click="handleCreateNote">
             <template #icon><PlusOutlined /></template>
           </a-button>
         </div>
       </div>
+
+      <input
+        ref="importFileInput"
+        type="file"
+        style="display: none"
+        @change="handleImportFileChange"
+      />
+      <input
+        ref="importFolderInput"
+        type="file"
+        style="display: none"
+        :accept="folderImportAccept"
+        webkitdirectory
+        directory
+        multiple
+        @change="handleImportFolderChange"
+      />
 
       <!-- 笔记列表：按文件夹分组 -->
       <div
@@ -668,7 +965,7 @@ const handleDropOnFolder = async (folderId: number | null) => {
 
         <!-- 各文件夹分组 -->
         <div
-          v-for="{ folder, notes } in groupedNotes.folderGroups"
+          v-for="{ folder, notes, displayName } in groupedNotes.folderGroups"
           :key="folder.id"
           class="folder-group"
           @dragover.prevent
@@ -691,7 +988,7 @@ const handleDropOnFolder = async (folderId: number | null) => {
               @pressEnter="handleConfirmRename"
               @blur="handleConfirmRename"
             />
-            <span v-else class="folder-name">{{ folder.name }}</span>
+            <span v-else class="folder-name">{{ displayName }}</span>
             <span class="folder-count">{{ notes.length }}</span>
 
             <!-- 文件夹操作按钮（hover 显示） -->
@@ -707,7 +1004,7 @@ const handleDropOnFolder = async (folderId: number | null) => {
               <a-tooltip title="删除文件夹">
                 <a-button
                   type="text" size="small" shape="circle" danger
-                  @click="handleDeleteFolder(folder.id, folder.name)"
+                  @click="handleDeleteFolder(folder.id, displayName)"
                 >
                   <template #icon><DeleteOutlined /></template>
                 </a-button>

@@ -2,9 +2,11 @@ package com.smartnote.service;
 
 import com.smartnote.dto.NoteRequest;
 import com.smartnote.entity.Note;
+import com.smartnote.entity.NoteFolder;
 import com.smartnote.entity.Notebook;
 import com.smartnote.entity.Tag;
 import com.smartnote.entity.User;
+import com.smartnote.repository.NoteFolderRepository;
 import com.smartnote.repository.NoteRepository;
 import com.smartnote.repository.NotebookRepository;
 import com.smartnote.repository.TagRepository;
@@ -51,6 +53,9 @@ public class NoteService {
 
     @Autowired
     private NoteHistoryRepository noteHistoryRepository;
+
+    @Autowired
+    private NoteFolderRepository noteFolderRepository;
 
     /**
      * 全局搜索
@@ -143,6 +148,9 @@ public class NoteService {
 
         Note note = new Note();
         note.setNotebook(notebook);
+        if (request.getFolderId() != null) {
+            note.setFolder(resolveFolderForNotebook(request.getFolderId(), notebook.getId()));
+        }
         note.setTitle(request.getTitle());
         note.setContent(request.getContent());
         note.setContentHtml(request.getContentHtml());
@@ -155,6 +163,18 @@ public class NoteService {
         Note savedNote = noteRepository.save(note);
         saveHistoryIfNeeded(savedNote, true); // 第一次创建时保存历史
         return savedNote;
+    }
+
+    private NoteFolder resolveFolderForNotebook(Long folderId, Long notebookId) {
+        NoteFolder folder = noteFolderRepository.findById(folderId)
+                .orElseThrow(() -> new RuntimeException("Folder not found"));
+
+        Long folderNotebookId = folder.getNotebook() == null ? null : folder.getNotebook().getId();
+        if (folderNotebookId == null || !folderNotebookId.equals(notebookId)) {
+            throw new RuntimeException("Folder does not belong to the target notebook");
+        }
+
+        return folder;
     }
 
     /**

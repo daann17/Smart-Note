@@ -61,6 +61,7 @@ export interface NoteSearchFilters {
   endDate?: string;
 }
 
+export type NoteImportFormat = 'text' | 'markdown' | 'html' | 'word' | 'excel';
 export type NoteExportFormat = 'html' | 'pdf' | 'word';
 
 export const useNoteStore = defineStore('note', () => {
@@ -433,6 +434,40 @@ export const useNoteStore = defineStore('note', () => {
     }
   };
 
+  const importNote = async (
+    notebookId: number,
+    file: File,
+    format: NoteImportFormat,
+    folderId?: number | null,
+    selectImported = true,
+  ) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await api.post('/notes/import', formData, {
+        params: {
+          notebookId,
+          format,
+          ...(folderId != null ? { folderId } : {}),
+        },
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      const importedNote = response.data as Note;
+      notes.value = [importedNote, ...notes.value.filter((note) => note.id !== importedNote.id)];
+      if (selectImported) {
+        currentNote.value = importedNote;
+      }
+      return importedNote;
+    } catch (error) {
+      console.error(`Failed to import note as ${format}`, error);
+      throw error;
+    }
+  };
+
   return {
     notes,
     trashNotes,
@@ -464,5 +499,6 @@ export const useNoteStore = defineStore('note', () => {
     resolveShareComment,
     deleteShareComment,
     exportNote,
+    importNote,
   };
 });
