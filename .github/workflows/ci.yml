@@ -7,11 +7,11 @@ on:
     branches: ["main","master"]
 
 jobs:
-  fronted:
+  frontend:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: fronted
+        working-directory: frontend
 
     steps:
       - name: Checkout code
