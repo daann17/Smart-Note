@@ -1,0 +1,54 @@
+name: CD
+
+on:
+  push:
+    branches: ["main", "master"]
+  workflow_dispatch:
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Deploy to server over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT || '22' }}
+          script_stop: true
+          script: |
+            set -e
+
+            export JAVA_HOME=/usr/lib/jvm/java-17-openjdk
+            export PATH="$JAVA_HOME/bin:$PATH"
+
+            cd /www/wwwroot/Smart-Note
+            git fetch --all --prune
+            git checkout main || git checkout master
+            git pull --ff-only
+
+            cd /www/wwwroot/Smart-Note/backend
+            mvn -B -DskipTests clean package
+            systemctl restart smartnote
+            systemctl is-active --quiet smartnote
+
+            cd /www/wwwroot/Smart-Note/frontend
+            if command -v corepack >/dev/null 2>&1; then
+              corepack enable
+              corepack prepare pnpm@10.17.0 --activate
+            fi
+            if ! command -v pnpm >/dev/null 2>&1; then
+              npm install -g pnpm
+            fi
+            pnpm install --frozen-lockfile
+            pnpm build
+
+            mkdir -p /www/wwwroot/smartnote-web
+            cp -r dist/. /www/wwwroot/smartnote-web/
