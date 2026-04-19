@@ -26,21 +26,24 @@ jobs:
           port: ${{ secrets.SERVER_PORT || '22' }}
           script_stop: true
           script: |
-            set -e
+            set -euxo pipefail
 
             export JAVA_HOME=/usr/lib/jvm/java-17-openjdk
             export PATH="$JAVA_HOME/bin:$PATH"
 
+            echo "==> Updating repository"
             cd /www/wwwroot/Smart-Note
             git fetch --all --prune
             git checkout main
             git pull --ff-only
 
+            echo "==> Building backend"
             cd /www/wwwroot/Smart-Note/backend
             mvn -B -DskipTests clean package
             systemctl restart smartnote
             systemctl is-active --quiet smartnote
 
+            echo "==> Checking backend health"
             # Wait for the application to bind its port and accept HTTP traffic.
             for i in $(seq 1 30); do
               if ss -lnt | grep -q ':8081 '; then
@@ -58,6 +61,7 @@ jobs:
               exit 1
             fi
 
+            echo "==> Building frontend"
             cd /www/wwwroot/Smart-Note/frontend
             if command -v corepack >/dev/null 2>&1; then
               corepack enable
@@ -69,10 +73,7 @@ jobs:
             pnpm install --frozen-lockfile
             pnpm build
 
+            echo "==> Publishing frontend assets"
             mkdir -p /www/wwwroot/smartnote-web
-            if command -v rsync >/dev/null 2>&1; then
-              rsync -a --delete dist/ /www/wwwroot/smartnote-web/
-            else
-              find /www/wwwroot/smartnote-web -mindepth 1 -maxdepth 1 -exec rm -rf {} +
-              cp -r dist/. /www/wwwroot/smartnote-web/
-            fi
+            rm -rf /www/wwwroot/smartnote-web/*
+            cp -a dist/. /www/wwwroot/smartnote-web/
