@@ -1,8 +1,10 @@
 name: CD
 
 on:
-  push:
-    branches: ["main", "master"]
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: ["main"]
   workflow_dispatch:
 
 concurrency:
@@ -11,8 +13,14 @@ concurrency:
 
 jobs:
   deploy:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
-    environment: production
+    env:
+      APP_ROOT: /www/wwwroot/Smart-Note
+      BACKEND_DIR: /www/wwwroot/Smart-Note/backend
+      FRONTEND_DIR: /www/wwwroot/Smart-Note/frontend
+      FRONTEND_DEPLOY_DIR: /www/wwwroot/smartnote-web
+      SERVICE_NAME: smartnote
 
     steps:
       - name: Deploy to server over SSH
@@ -29,17 +37,34 @@ jobs:
             export JAVA_HOME=/usr/lib/jvm/java-17-openjdk
             export PATH="$JAVA_HOME/bin:$PATH"
 
-            cd /www/wwwroot/Smart-Note
+            cd "${APP_ROOT}"
             git fetch --all --prune
-            git checkout main || git checkout master
+            git checkout main
             git pull --ff-only
 
-            cd /www/wwwroot/Smart-Note/backend
+            cd "${BACKEND_DIR}"
             mvn -B -DskipTests clean package
-            systemctl restart smartnote
-            systemctl is-active --quiet smartnote
+            systemctl restart "${SERVICE_NAME}"
+            systemctl is-active --quiet "${SERVICE_NAME}"
 
-            cd /www/wwwroot/Smart-Note/frontend
+            # Wait for the application to bind its port and accept HTTP traffic.
+            for i in $(seq 1 30); do
+              if ss -lnt | grep -q ':8081 '; then
+                http_code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8081/ || true)
+                if [ "$http_code" != "000" ] && [ "${http_code#5}" = "$http_code" ]; then
+                  break
+                fi
+              fi
+              sleep 2
+            done
+
+            http_code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8081/ || true)
+            if [ "$http_code" = "000" ] || [ "${http_code#5}" != "$http_code" ]; then
+              echo "Backend health check failed, status: $http_code"
+              exit 1
+            fi
+
+            cd "${FRONTEND_DIR}"
             if command -v corepack >/dev/null 2>&1; then
               corepack enable
               corepack prepare pnpm@10.17.0 --activate
@@ -50,5 +75,10 @@ jobs:
             pnpm install --frozen-lockfile
             pnpm build
 
-            mkdir -p /www/wwwroot/smartnote-web
-            cp -r dist/. /www/wwwroot/smartnote-web/
+            mkdir -p "${FRONTEND_DEPLOY_DIR}"
+            if command -v rsync >/dev/null 2>&1; then
+              rsync -a --delete dist/ "${FRONTEND_DEPLOY_DIR}/"
+            else
+              find "${FRONTEND_DEPLOY_DIR}" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+              cp -r dist/. "${FRONTEND_DEPLOY_DIR}/"
+            fi

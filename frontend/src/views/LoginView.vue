@@ -86,7 +86,7 @@ const toggleMode = () => {
       <section class="auth-hero">
         <div class="hero-copy">
           <span class="hero-badge">SmartNote Workspace</span>
-          <h1>把零散想法整理成温和、持续生长的知识库。</h1>
+          <h1>把零散想法整理成温和、持续生长的知识库</h1>
           <p>
             记录笔记、沉淀结构化知识、管理分享与协作评论，并把 AI 能力嵌入你的创作流程。
           </p>
